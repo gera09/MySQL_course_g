@@ -1,9 +1,11 @@
 use vk;
 
-ALTER TABLE vk.users ADD `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP NULL;
-ALTER TABLE vk.users ADD `updated_at` DATETIME DEFAULT on update CURRENT_TIMESTAMP NULL;
+ALTER TABLE vk.users DROP COLUMN created_at;
+ALTER TABLE vk.users DROP COLUMN updated_at;
+ALTER TABLE vk.users ADD created_at DATETIME DEFAULT CURRENT_TIMESTAMP NULL;
+ALTER TABLE vk.users ADD updated_at DATETIME default current_timestamp on update current_timestamp NULL;
 
-DELETE FROM users;
+delete from users;
 
 INSERT INTO users (firstname, lastname, email, phone) values
 ('Ivan', 'Ivanov', 'ar7dlo50102@example.org', '9374071116'),
@@ -18,11 +20,10 @@ INSERT INTO users (firstname, lastname, email, phone) values
  * Заполните их текущими датой и временем.*/
 UPDATE users
 SET 
-	firstname = 'NOTivan',
-	lastname = 'NOTivanov',
-	`updated_at` = NOW()
+	lastname = 'NOT1'
+	-- `updated_at` = NOW() - не требуется, дата "updated_at" обновляется автоматически
 WHERE
-	id = 46 or id = 47
+	firstname = 'Ivan' or firstname = 'Petr'
 ;
 
 select * from users;
@@ -32,6 +33,19 @@ select * from users;
  * и в них долгое время помещались значения в формате "20.10.2017 8:10". Необходимо преобразовать поля 
  * к типу DATETIME, сохранив введеные ранее значения.
  */
+
+ALTER TABLE vk.users MODIFY COLUMN created_at VARCHAR(50);
+ALTER TABLE vk.users MODIFY COLUMN updated_at VARCHAR(50);
+
+select * from users;
+
+UPDATE users
+	SET created_at = "20.10.2017 8:10",
+	updated_at = "20.10.2017 8:20"
+;
+
+
+
 
 
 
