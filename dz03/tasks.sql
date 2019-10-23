@@ -44,6 +44,12 @@ UPDATE users
 	updated_at = "20.10.2017 8:20"
 ;
 
+UPDATE users set created_at = STR_TO_DATE(created_at, '%d.%m.%Y %H:%i:%s') from users; -- тут ошибка переписать апдейт нормально (см в инете)
+UPDATE users set updated_at = STR_TO_DATE(updated_at, '%d.%m.%Y %H:%i:%s') from users;
+
+ALTER TABLE vk.users MODIFY COLUMN created_at DATETIME NULL;
+ALTER TABLE vk.users MODIFY COLUMN updated_at DATETIME NULL;
+
 
 
 
