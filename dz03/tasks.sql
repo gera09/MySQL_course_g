@@ -15,6 +15,7 @@ INSERT INTO users (firstname, lastname, email, phone) values
 ('Sanya', 'Sekiro', 'von.7bridget@example.net', '9909791725')
 ;
 
+-- Практическое задание по теме “Операторы, фильтрация, сортировка и ограничение”
 
 /*1. Пусть в таблице users поля created_at и updated_at оказались незаполненными. 
  * Заполните их текущими датой и временем.*/
@@ -101,6 +102,73 @@ SELECT value
 
 --  ВОПРОС: таблицы для заданий надо создавать самому или где-то есть готовые?
 
+
+/*
+4. (по желанию) Из таблицы users необходимо извлечь пользователей, родившихся в августе и мае. 
+Месяцы заданы в виде списка английских названий ('may', 'august')
+*/
+
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+	id SERIAL PRIMARY KEY, -- SERIAL = BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+    firstname VARCHAR(50),
+    lastname VARCHAR(50) COMMENT 'Фамиль', -- COMMENT на случай, если имя неочевидное
+    email VARCHAR(120) UNIQUE,
+    phone BIGINT, 
+    birthday VARCHAR(50)
+);
+
+-- добавим несколько пользователей
+insert into users (id, firstname, lastname, email, phone, birthday) values
+('1', 'Reuben', 'Nienow', 'arlo50102@example.org', '9374071116', 'may'),
+('2', 'Frederik', 'Upton', 'terrence.cartwright@example.org', '9127498182', 'july'),
+('3', 'Unique', 'Windler', 'rupert55@example.org', '9921090703', 'june'),
+('4', 'Norene', 'West', 'rebekah29@example.net', '9592139196', 'august'),
+('5', 'Frederick', 'Effertz', 'von.bridget@example.net', '9909791725', 'may'),
+('6', 'Norene2', 'West', 'rebesdfskah29@example.net', '9592139196', 'september'),
+('7', 'Norene1', 'West', 'rebeksfah29@example.net', '9592139196', 'august')
+;
+
+SELECT * FROM users; 
+
+SELECT firstname, birthday FROM users
+	WHERE birthday = 'may' OR birthday = 'august'
+;
+
+
+/*5 .(по желанию) Из таблицы catalogs извлекаются записи при помощи запроса. 
+ * SELECT * FROM catalogs WHERE id IN (5, 1, 2); Отсортируйте записи в порядке, заданном в списке IN.
+ */
+
+DROP TABLE IF EXISTS catalogs;
+CREATE TABLE catalogs (
+	id SERIAL PRIMARY KEY, -- SERIAL = BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+    product VARCHAR(50)
+);
+
+insert into catalogs (product) values 
+	('something'),	('photo'),	
+	('table'),	('check'),	
+	('brown'),	('napkin')
+;
+
+SELECT * FROM catalogs; 
+
+SELECT * FROM catalogs WHERE id IN (5, 1, 2) ORDER by FIELD (id, 5, 1, 2);
+
+-- по-моему задание пора обновить: 
+-- https://ru.stackoverflow.com/questions/562351/mysql-%D1%81%D0%BE%D1%80%D1%82%D0%B8%D1%80%D0%BE%D0%B2%D0%BA%D0%B0-%D0%B2%D1%8B%D0%B1%D0%BE%D1%80%D0%BA%D0%B8-%D0%B2-%D0%BF%D0%BE%D1%80%D1%8F%D0%B4%D0%BA%D0%B5-%D0%B7%D0%B0%D0%B4%D0%B0%D0%BD%D0%BD%D0%BE%D0%BC-%D0%B2-%D0%BE%D0%BF%D0%B5%D1%80%D0%B0%D1%82%D0%BE%D1%80%D0%B5-in
+
+
+
+-- Практическое задание теме “Агрегация данных”
+
+/*
+ * 1. Подсчитайте средний возраст пользователей в таблице users
+2. Подсчитайте количество дней рождения, которые приходятся на каждый из дней недели. Следует учесть, что необходимы дни недели текущего года, а не года рождения.
+3. (по желанию) Подсчитайте произведение чисел в столбце таблицы
+
+ */
 
 
 
