@@ -38,27 +38,20 @@ select * from users; -- посмотрел, что дата апдейта об�
 ALTER TABLE vk.users MODIFY COLUMN created_at VARCHAR(50);
 ALTER TABLE vk.users MODIFY COLUMN updated_at VARCHAR(50);
 
-
-
 UPDATE users
 	SET created_at = "20.10.2017 8:10",
 	updated_at = "20.10.2017 8:20"
 ;
 
-select * from users; -- тип данных как текст, при выполнении alt+x этого не видно, т.к. надо обновить dbeaver слева в структуре
+select * from users; -- тип данных как текст, при выполнении всего кода через alt+x этого не видно, т.к. надо обновить dbeaver слева в структуре
 
-UPDATE users set created_at = STR_TO_DATE(created_at, '%d.%m.%Y %H:%i:%s'); -- тут ошибка переписать апдейт нормально (см в инете)
+UPDATE users set created_at = STR_TO_DATE(created_at, '%d.%m.%Y %H:%i:%s');
 UPDATE users set updated_at = STR_TO_DATE(updated_at, '%d.%m.%Y %H:%i:%s');
 
 ALTER TABLE vk.users MODIFY COLUMN created_at DATETIME NULL;
 ALTER TABLE vk.users MODIFY COLUMN updated_at DATETIME NULL;
 
 select * from users; -- все работает
-
-
-
--- ВОПРОС: почему код не выполняется через выделение нескольких строк и нажатие на ctrl+Enter? Выдает ошибку. 
--- При это построчно работает, и через alt+x тоже работает!
 
 
 
@@ -90,17 +83,15 @@ SELECT value FROM storehouses_products
 		END, 
 	value -- вместо 1 вроде как советуют границу максимального даипазона, но можно хоть что!!!!
 ;
-
 -- до запятой сортируем нули, после - значения
-
 
 SELECT value
 	FROM storehouses_products
 	ORDER BY IF(value = 0, 1, 0), value -- второй вариант (IF( condition, [value_if_true], [value_if_false] ))
 ;
 	
-
 --  ВОПРОС: таблицы для заданий надо создавать самому или где-то есть готовые?
+
 
 
 /*
@@ -120,20 +111,21 @@ CREATE TABLE users (
 
 -- добавим несколько пользователей
 insert into users (id, firstname, lastname, email, phone, birthday) values
-('1', 'Reuben', 'Nienow', 'arlo50102@example.org', '9374071116', 'may'),
-('2', 'Frederik', 'Upton', 'terrence.cartwright@example.org', '9127498182', 'july'),
-('3', 'Unique', 'Windler', 'rupert55@example.org', '9921090703', 'june'),
-('4', 'Norene', 'West', 'rebekah29@example.net', '9592139196', 'august'),
-('5', 'Frederick', 'Effertz', 'von.bridget@example.net', '9909791725', 'may'),
-('6', 'Norene2', 'West', 'rebesdfskah29@example.net', '9592139196', 'september'),
-('7', 'Norene1', 'West', 'rebeksfah29@example.net', '9592139196', 'august')
+('1', 'Reuben', 'Nienow', 'arlo50102@example.org', '9374071116', '29 may 1988'),
+('2', 'Frederik', 'Upton', 'terrence.cartwright@example.org', '9127498182', '30 july 1990'),
+('3', 'Unique', 'Windler', 'rupert55@example.org', '9921090703', '1 june 2000'),
+('4', 'Norene', 'West', 'rebekah29@example.net', '9592139196', '2 august 1995'),
+('5', 'Frederick', 'Effertz', 'von.bridget@example.net', '9909791725', '15 may 1985'),
+('6', 'Norene2', 'West', 'rebesdfskah29@example.net', '9592139196', '10 september 1990'),
+('7', 'Norene1', 'West', 'rebeksfah29@example.net', '9592139196', '5 august 1998')
 ;
 
 SELECT * FROM users; 
 
 SELECT firstname, birthday FROM users
-	WHERE birthday = 'may' OR birthday = 'august'
+	WHERE birthday like '% may %' OR birthday like '%august%'
 ;
+
 
 
 /*5 .(по желанию) Из таблицы catalogs извлекаются записи при помощи запроса. 
@@ -165,15 +157,27 @@ SELECT * FROM catalogs WHERE id IN (5, 1, 2) ORDER by FIELD (id, 5, 1, 2);
 
 /*
  * 1. Подсчитайте средний возраст пользователей в таблице users
-2. Подсчитайте количество дней рождения, которые приходятся на каждый из дней недели. Следует учесть, что необходимы дни недели текущего года, а не года рождения.
-3. (по желанию) Подсчитайте произведение чисел в столбце таблицы
+ *  */
 
+select birthday from users;
+select avg(DATEDIFF(curdate(), STR_TO_DATE(birthday, '%d %M %Y')) div 365) from users; -- средний возраст
+
+
+
+/*2. Подсчитайте количество дней рождения, которые приходятся на каждый из дней недели. 
+Следует учесть, что необходимы дни недели текущего года, а не года рождения.
+*/
+
+
+
+
+
+/*
+ * 3. (по желанию) Подсчитайте произведение чисел в столбце таблицы
  */
 
-
-
-
-
+select id from users;
+SELECT EXP(SUM(LOG(id))) FROM users;
 
 
 
