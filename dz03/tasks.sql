@@ -182,19 +182,27 @@ select STR_TO_DATE(
 		'%d %M %Y') as `date`
 from users; -- привел к типу DATETIME
 
--- выбрать по дням недели count
+
+
+
+
+-- выбрать количество по дням недели count -- не работает!!!!
 select COUNT( 
-		select STR_TO_DATE(REPLACE(birthday, SUBSTRING(birthday, length(birthday)-3, length(birthday)), '2019'), '%d %M %Y') from users)
+		select STR_TO_DATE(REPLACE(birthday, SUBSTRING(birthday, length(birthday)-3, length(birthday)), '2019'), '%d %M %Y') from users
+		)
 from users;
 
-WEEKDAY(STR_TO_DATE(created_at, '%d.%m.%Y %H:%i:%s'));
+
+SELECT WEEKDAY(STR_TO_DATE(birthday, '%d.%m.%Y %H:%i:%s')); -- не работает, как получить для всего столбца???
+
+
 
 /*
  * 3. (по желанию) Подсчитайте произведение чисел в столбце таблицы
  */
 
 select id from users;
-SELECT EXP(SUM(LOG(id))) FROM users;
+SELECT EXP(SUM(LOG(id))) FROM users; -- работает!!!
 
 -- Немаловажно также получать верный ответ на все задачи и обратную связь, по своему решению. Спасибо!
 
