@@ -169,8 +169,25 @@ select avg(DATEDIFF(curdate(), STR_TO_DATE(birthday, '%d %M %Y')) div 365) from 
 */
 
 
+select sum(WEEKDAY(select STR_TO_DATE( birthday, 2019 '%d %M') from users))
 
+select SUBSTRING(birthday, length(birthday)-3, length(birthday)) from users; -- получил год
 
+select 
+	REPLACE(birthday, SUBSTRING(birthday, length(birthday)-3, length(birthday)), '2019') 
+from users; -- заменил год
+
+select STR_TO_DATE(
+			REPLACE(birthday, SUBSTRING(birthday, length(birthday)-3, length(birthday)), '2019'),
+		'%d %M %Y') as `date`
+from users; -- привел к типу DATETIME
+
+-- выбрать по дням недели count
+select COUNT( 
+		select STR_TO_DATE(REPLACE(birthday, SUBSTRING(birthday, length(birthday)-3, length(birthday)), '2019'), '%d %M %Y') from users)
+from users;
+
+WEEKDAY(STR_TO_DATE(created_at, '%d.%m.%Y %H:%i:%s'));
 
 /*
  * 3. (по желанию) Подсчитайте произведение чисел в столбце таблицы
@@ -178,6 +195,8 @@ select avg(DATEDIFF(curdate(), STR_TO_DATE(birthday, '%d %M %Y')) div 365) from 
 
 select id from users;
 SELECT EXP(SUM(LOG(id))) FROM users;
+
+-- Немаловажно также получать верный ответ на все задачи и обратную связь, по своему решению. Спасибо!
 
 
 
