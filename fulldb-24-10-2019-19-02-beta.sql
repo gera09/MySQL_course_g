@@ -1,3 +1,7 @@
+DROP DATABASE IF EXISTS vk;
+CREATE DATABASE vk;
+USE vk;
+
 -- Generation time: Thu, 24 Oct 2019 19:02:15 +0000
 -- Host: mysql.hostinger.ro
 -- DB name: u574849695_22
