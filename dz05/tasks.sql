@@ -79,14 +79,6 @@ inner join
 		cities on (flights.`from` = cities.label)
  -- 	where citiess=flights
    
-/*   
-SELECT 
-  flights.`from`, flights.`to`, cities.label, cities.name from flights
-  LEFT JOIN 
-  cities ON flights.`from` = cities.label
-SET flights.`from` = cities.name;
-*/
-
 
 
 select replace((flights.`from`),
@@ -101,27 +93,21 @@ join
 
 
 	
-select replace((flights.`from`),
+(select replace((flights.`from`),
     			(cities.label),
     			(cities.name)) as `from`
     			from cities
 join
-	flights on (flights.`from` = cities.label)
+	flights on (flights.`from` = cities.label))
 union
-select replace((flights.`to`),
+(select replace((flights.`to`),
     			(cities.label),
     			(cities.name)) as `to`
     			from cities
 join
-	flights on (flights.`to` = cities.label)  --  не работает вместе, отдельно я получил эти две колонки
+	flights on (flights.`to` = cities.label));  --  не работает вместе, отдельно я получил эти две колонки (если выполнить отдельно до и после union)
 
-	
-
-select flights.`from` from flights
-                 where flights.`from`=cities.name
-join
-	cities ON flights.`from` = cities.label
-
+-- в итоге так и не получилось!
 
 select IF('Привет' REGEXP '[А-Яа-я]', 'русский', 'yt jxty,'); -- конструкция для выбора русского текста
 
