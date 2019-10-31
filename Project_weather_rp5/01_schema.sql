@@ -118,7 +118,8 @@ CREATE TABLE report_28 (
     
     -- прописать ключи
     -- FOREIGN KEY (to_user_id) REFERENCES users(id)
-       FOREIGN KEY (trading_date) REFERENCES report_27(trading_date) -- ON DELETE RESTRICT ON UPDATE RESTRICT
+       FOREIGN KEY (trading_date) REFERENCES report_27(trading_date), -- ON DELETE RESTRICT ON UPDATE RESTRICT
+       FOREIGN KEY (gtp) REFERENCES report_27(gtp)
 );
 
 
@@ -194,7 +195,8 @@ CREATE TABLE br (
     
     -- прописать ключи
     -- FOREIGN KEY (to_user_id) REFERENCES users(id)
-       FOREIGN KEY (trading_date) REFERENCES report_27(trading_date) -- ON DELETE RESTRICT ON UPDATE RESTRICT
+       FOREIGN KEY (trading_date) REFERENCES report_27(trading_date),
+       FOREIGN KEY (gtp) REFERENCES report_27(gtp) 
 );
 
 
