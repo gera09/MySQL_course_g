@@ -7,6 +7,19 @@ use vk;
 -- ПРЕДИСЛОВИЕ: на решение этого упражнения я потратил около 8 часов и 15 кг нервов, поэтому дико хочется знать лаконичное и верное решение. 
 -- Спасибо за понимание!!!
 
+use vk;
+
+select
+from_user_id
+, concat(u.firstname, ' ', u.lastname) as name
+, count() as 'messages count'
+from messages m
+join users u on u.id = m.from_user_id
+where to_user_id = 1
+group by from_user_id
+order by count() desc
+limit 1;
+
 -- найдем id пользователя по количеству написанных собщений юзеру с id=27:
 Select from_user_id, to_user_id, count(*) as countX from messages  where (to_user_id = 27 )  group by from_user_id ORDER by countX desc limit 1; -- id = 3
 
@@ -17,8 +30,8 @@ Select from_user_id from messages  where (to_user_id = 27 )  group by from_user_
 Select from_user_id, count(from_user_id) from messages  where (to_user_id = 27 )  group by from_user_id ORDER by count(from_user_id) desc limit 1
 
 -- сообщения в обратную сторону
-Select from_user_id, to_user_id, count(*) as countX from messages  where (to_user_id = 27 or from_user_id = 27 )  
-group by to_user_id ORDER by count(from_user_id) desc limit 10;
+Select from_user_id, to_user_id, count(*) as countX from messages  where ( from_user_id = 27 )  
+group by to_user_id ORDER by count(from_user_id) desc limit 1;
 
 
 
