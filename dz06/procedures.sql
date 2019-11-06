@@ -1,3 +1,6 @@
+/* -- РЕШЕНИЕ ДЗ НИЖЕ КОММЕНТА!
+ * 
+
 use example1;
 
 DELIMITER //
@@ -104,7 +107,7 @@ DELIMITER ;
 
 call example1.DECLARE_var();
 
-
+ */
 
 -- ДЗ 3.1
 /*Создайте хранимую функцию hello(), которая будет возвращать приветствие, 
@@ -114,9 +117,11 @@ call example1.DECLARE_var();
  * "Доброй ночи".
 */
 -- сделал процедуру:
-DROP procedure IF EXISTS example1.w1;
+use shop;
+
+DROP procedure IF EXISTS shop.w1;
 DELIMITER //
-create procedure example1.w1()
+create procedure shop.w1()
 begin
 SELECT CASE 
           WHEN HOUR(now()) <= 6 THEN 'Доброй ночи' 
@@ -128,27 +133,28 @@ SELECT CASE
 end //
 DELIMITER ;
 
-call example1.w1();
+call shop.w1();
 
 
 
--- вот функция, только почему-то не работает:
-DROP function IF EXISTS example1.hello;
+-- вот функция:
+DROP function IF EXISTS shop.hello;
 DELIMITER //
-create function example1.hello(time_now int)
+create function shop.hello(time_now int)
 returns varchar(255) deterministic -- deterministic - если возращает одно и тоже значение, иначе not deterministic
 begin
 	declare str varchar(255);
-      if (time_now <= 6) THEN set str = 'Доброй ночи';
-      if (time_now > 6 AND time_now <= 12) THEN set str = 'Доброе утро';
-      if (time_now > 12 AND time_now <= 18) THEN set str = 'Добрый день'; 
-      if (time_now > 18) THEN set str = 'Добрый вечер'; 
+      if (time_now <= 6) THEN set str = 'Доброй ночи'; END IF;
+      if (time_now > 6 AND time_now <= 12) THEN set str = 'Доброе утро'; END IF;
+      if (time_now > 12 AND time_now <= 18) THEN set str = 'Добрый день'; END IF;
+      if (time_now > 18) THEN set str = 'Добрый вечер'; END IF; 
 	return str;
 end //
 DELIMITER ;
 
-select example1.hello(HOUR(now()));
+select shop.hello(HOUR(now()));
 
+-- ДЗ 3.2
 /*В таблице products есть два текстовых поля: name с названием товара и description с 
  * его описанием. Допустимо присутствие обоих полей или одно из них. Ситуация, когда оба 
  * поля принимают неопределенное значение NULL неприемлема. Используя триггеры, добейтесь 
@@ -157,9 +163,29 @@ select example1.hello(HOUR(now()));
 
 use shop;
 
+DROP trigger IF EXISTS check_null_products;
+DELIMITER //
+create trigger check_null_products before update on products
+for each row
+begin
+	declare c_id int;
+	declare descr varchar(2000);
+	select id into c_id from catalogs order by id limit 1; -- тут нет логики!!! Если catalog_id потерян, то можно опрелить только по описанию!
+	select name into descr from catalogs order by id limit 1;	
+				
+	if (old.description <=> null and new.catalog_id <=> null) then set new.catalog_id = coalesce(new.catalog_id, old.catalog_id, c_id); END IF;
+	if (new.description <=> null and old.catalog_id <=> null) then set new.description = coalesce(new.description, old.description, descr); END IF;
+end //
+DELIMITER ;	
+-- РАБОТАЕТ!!! )))
+	
+update products set catalog_id = null where id = 2;  -- 1
+update products set description = null where id = 2; -- 'Процессор для настольных персональных компьютеров, основанных на платформе Intel.'
 
+select * from products;
 
-
+update products set catalog_id = 1 where id = 2;  -- 1
+update products set description = 'Процессор для настольных персональных компьютеров, основанных на платформе Intel.' where id = 2;
 
 /*
  * (по желанию) Напишите хранимую функцию для вычисления произвольного числа Фибоначчи. 
