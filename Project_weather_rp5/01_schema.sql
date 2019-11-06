@@ -34,7 +34,7 @@ CREATE TABLE report_27 (
 	id SERIAL PRIMARY KEY,
 	-- trading_date DATE COMMENT 'Дата, пример в отчете (2019-10-13)', -- STR_TO_DATE() --https://incode.pro/mysql/rabota-s-datami-v-mysql.html ======================
 	-- trading_hour TINYINT COMMENT 'Торговый час (00 или 23), пример в отчете (01-02)',	-- объединить с датой в datetime -- 1 =====================================
-	trading_date VARCHAR(50) null, -- DATETIME
+	-- trading_date VARCHAR(50) null, -- DATETIME
 	
 	-- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s'), -- 2019-10-13 - дата, 00 - час          -- 1
 	-- select STR_TO_DATE('2019-10-13 00', '%Y-%m-%d %H:%i:%s') 
@@ -70,9 +70,13 @@ CREATE TABLE report_27 (
 	-- korr_stair UNSIGNED COMMENT 'Скорректированная заявка субъекта - Ступень'										-- 22
     -- korr_p UNSIGNED COMMENT 'Скорректированная заявка субъекта - Цена руб/(МВт*час)' 								-- 23
     korr_v FLOAT UNSIGNED null COMMENT 'Скорректированная заявка субъекта - Количество МВт*час',								-- 24
+    
+    gtpp VARCHAR(8) null COMMENT 'PVIE0001',
+    
 	-- индексы
 	index(trading_date),
-	index(gtp)
+	index(gtp),
+	index(gtpp)
     -- прописать внешние ключи
 
 );
@@ -127,7 +131,7 @@ CREATE TABLE report_28 (
 	index(gtpp),
     -- прописать ключи
        FOREIGN KEY (trading_date) REFERENCES report_27(trading_date), -- ON DELETE RESTRICT ON UPDATE RESTRICT
-       FOREIGN KEY (gtpp) REFERENCES report_27(gtp)
+       FOREIGN KEY (gtpp) REFERENCES report_27(gtpp)
 );
 
 
@@ -160,7 +164,7 @@ CREATE TABLE br (
 	index(gtp),
     -- прописать ключи
        FOREIGN KEY (trading_date) REFERENCES report_27(trading_date),
-       FOREIGN KEY (gtp) REFERENCES report_27(gtp) 
+       FOREIGN KEY (gtp) REFERENCES report_27(gtpp) 
 );
 
 
@@ -187,7 +191,7 @@ CREATE TABLE fact_rp5 (
 	index(local_time),
     -- прописать ключи
        FOREIGN KEY (trading_date) REFERENCES report_27(trading_date),
-       FOREIGN KEY (gtpp) REFERENCES report_27(gtp) 
+       FOREIGN KEY (gtpp) REFERENCES report_27(gtpp) 
 );
 
 
@@ -217,7 +221,7 @@ CREATE TABLE forecast_rp5 (
 	index(local_time),
     -- прописать ключи
     FOREIGN KEY (trading_date) REFERENCES report_27(trading_date),
-    FOREIGN KEY (gtpp) REFERENCES report_27(gtp) 
+    FOREIGN KEY (gtpp) REFERENCES report_27(gtpp) 
 );
 
 DROP TABLE IF EXISTS insol;
@@ -236,7 +240,7 @@ CREATE TABLE insol (
 	index(id_param),
     -- прописать ключи
     FOREIGN KEY (trading_date) REFERENCES report_27(trading_date),
-    FOREIGN KEY (gtpp) REFERENCES report_27(gtp)
+    FOREIGN KEY (gtpp) REFERENCES report_27(gtpp)
 );
 
 DROP TABLE IF EXISTS links_obj_insol;
@@ -278,7 +282,7 @@ CREATE TABLE gtp (
 
 DROP TABLE IF EXISTS logs;
 CREATE TABLE logs (
-	log_time DATETIME null COMMENT 'время создания лога',
+	-- log_time DATETIME null COMMENT 'время создания лога', -- ============================= ВОССТАНОВИТЬ ВРЕМЯ ===================
 	log_txt VARCHAR(1000) COMMENT 'текст лога',
 	status VARCHAR(50) COMMENT 'статус лога - ошибка, примечание и пр.'
 	-- индексы
@@ -289,13 +293,20 @@ CREATE TABLE logs (
 
 SHOW VARIABLES LIKE "secure_file_priv"; 
 
-LOAD DATA INFILE 'csv_to_db1.csv' 
-INTO TABLE report_27 
+SHOW VARIABLES
+
+LOAD DATA INFILE 'csv_to_logs.csv' 
+INTO TABLE logs
+CHARACTER SET cp1251
 FIELDS TERMINATED BY ';' 
 ENCLOSED BY '"'
-LINES TERMINATED BY 'n'
+LINES TERMINATED BY '\n' -- '\n'
 IGNORE 1 ROWS;
 
+  
+   
+
+INSERT INTO `report_27` (`id`, `trading_date`, `gtp`, `v_bid_so`, `t_min`, `p_max`, `change_load_down`, `change_load_up`, `trade_graph`, `p_unreg`, `v_sell_rsv`, `p_sell_rsv`, `v_buy_sdd`, `p_buy_sdd`, `korr_v`) VALUES ('1', '2019-01-01 00:01:00', 'GVIE0010', '0', '0', '0', 884, 750, '0.82', '43.4', '286128000', '1041.06', '0', '124405', '0');
 /*
 INSERT INTO `report_27` (`id`, `trading_date`, `gtp`, `v_bid_so`, `t_min`, `t_max`, `change_load_down`, `change_load_up`, `trade_graph`, `p_unreg`, `v_sell_rsv`, `p_sell_rsv`, `v_buy_sdd`, `p_buy_sdd`, `korr_v`) VALUES ('1', '2019-01-01 00:01:00', 'GVIE0010', '0', '0', '0', 884, 750, '0.82', '43.4', '286128000', '1041.06', '0', '124405', '0');
 INSERT INTO `report_27` (`id`, `trading_date`, `gtp`, `v_bid_so`, `t_min`, `t_max`, `change_load_down`, `change_load_up`, `trade_graph`, `p_unreg`, `v_sell_rsv`, `p_sell_rsv`, `v_buy_sdd`, `p_buy_sdd`, `korr_v`) VALUES ('2', '2019-01-01 00:01:00', 'GVIE0010', '0', '0', '0', 698, 611, '43067200', '7.58', '5.379', '40319.3', '15515200', '533209000', '0');
