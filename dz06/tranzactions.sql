@@ -30,13 +30,38 @@ select * from numerics;
 use shop;
 -- describe products;
 
+
+
 /*
 Практическое задание по теме “Транзакции, переменные, представления”
 
 1. В базе данных shop и sample присутствуют одни и те же таблицы, учебной базы данных. 
 Переместите запись id = 1 из таблицы shop.users в таблицу sample.users. Используйте транзакции.
+*/
+select * from users;
+START TRANSACTION;
 
+INSERT INTO sample.users (*)
+  VALUES (select * from shop.users where id =1);
 
+SELECT @last_user_id := (SELECT MAX(id) FROM users); -- опасный способ
+
+INSERT INTO profiles (user_id, gender, birthday, hometown)
+  VALUES (@last_user_id, 'M', '1999-10-10', 'Moscow'); 
+  
+COMMIT;
+
+select * from sample.users;
+
+-- пример перемещения
+    INSERT INTO Persons_Table (person_id, person_name,person_email)
+          SELECT person_id, customer_name, customer_email
+          FROM customer_table
+          WHERE "insert your where clause here";
+    DELETE FROM customer_table
+          WHERE "repeat your where clause here";
+         
+/*
 2. Создайте представление, которое выводит название name товарной позиции из таблицы products 
 и соответствующее название каталога name из таблицы catalogs.
 

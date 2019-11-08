@@ -34,7 +34,7 @@ CREATE TABLE report_27 (
 	id SERIAL PRIMARY KEY,
 	-- trading_date DATE COMMENT 'Дата, пример в отчете (2019-10-13)', -- STR_TO_DATE() --https://incode.pro/mysql/rabota-s-datami-v-mysql.html ======================
 	-- trading_hour TINYINT COMMENT 'Торговый час (00 или 23), пример в отчете (01-02)',	-- объединить с датой в datetime -- 1 =====================================
-	-- trading_date VARCHAR(50) null, -- DATETIME
+	trading_date DATETIME null, -- DATETIME
 	
 	-- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s'), -- 2019-10-13 - дата, 00 - час          -- 1
 	-- select STR_TO_DATE('2019-10-13 00', '%Y-%m-%d %H:%i:%s') 
@@ -86,7 +86,7 @@ CREATE TABLE report_28 (
 	id SERIAL PRIMARY KEY,
 	-- trading_date DATE COMMENT 'Дата, пример в отчете (2019-10-13)', -- STR_TO_DATE() --https://incode.pro/mysql/rabota-s-datami-v-mysql.html
 	-- trading_hour TINYINT COMMENT 'Торговый час (00 или 23), пример в отчете (01-02)',	-- объединить с датой в datetime 
-	trading_date VARCHAR(50) null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          -- 1
+	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          -- 1
 	-- select STR_TO_DATE('2019-10-13 00', '%Y-%m-%d %H:%i:%s')
 	
 	gtpp VARCHAR(8) COMMENT 'PVIE0001',
@@ -138,7 +138,7 @@ CREATE TABLE report_28 (
 DROP TABLE IF EXISTS br;
 CREATE TABLE br (
 	id SERIAL PRIMARY KEY,
-	trading_date VARCHAR(50) null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
+	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
 	gtp VARCHAR(8) COMMENT 'GVIE0001',
 		
 	tg FLOAT UNSIGNED COMMENT 'торговый график',															 
@@ -171,7 +171,7 @@ CREATE TABLE br (
 DROP TABLE IF EXISTS fact_rp5;
 CREATE TABLE fact_rp5 (
 	id SERIAL PRIMARY KEY,
-	trading_date VARCHAR(50) null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
+	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
 	gtpp VARCHAR(8) COMMENT 'PVIE0001',
 		
 	local_time DATETIME null COMMENT 'местн. время',-- STR_TO_DATE('2019г. 1 ноября 16:00', '%d.%m.%Y %H:%i:%s') -часть после заяпятой  не адаптирована														 
@@ -198,7 +198,7 @@ CREATE TABLE fact_rp5 (
 DROP TABLE IF EXISTS forecast_rp5;
 CREATE TABLE forecast_rp5 (
 	id SERIAL PRIMARY KEY,
-	trading_date VARCHAR(50) null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
+	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
 	gtpp VARCHAR(8) COMMENT 'PVIE0001',
 		
 	local_time DATETIME null COMMENT 'местн. время',-- STR_TO_DATE('2019г. 1 ноября 16:00', '%d.%m.%Y %H:%i:%s') -часть после заяпятой  не адаптирована														 
@@ -227,7 +227,7 @@ CREATE TABLE forecast_rp5 (
 DROP TABLE IF EXISTS insol;
 CREATE TABLE insol (
 	id SERIAL PRIMARY KEY,
-	trading_date VARCHAR(50) null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
+	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
 	gtpp VARCHAR(8) COMMENT 'PVIE0001',
 	
 	id_param FLOAT unsigned  COMMENT 'ID параметра на сайте Grafanya',
@@ -283,6 +283,7 @@ CREATE TABLE gtp (
 DROP TABLE IF EXISTS logs;
 CREATE TABLE logs (
 	-- log_time DATETIME null COMMENT 'время создания лога', -- ============================= ВОССТАНОВИТЬ ВРЕМЯ ===================
+	id SERIAL PRIMARY KEY,
 	log_txt VARCHAR(1000) COMMENT 'текст лога',
 	status VARCHAR(50) COMMENT 'статус лога - ошибка, примечание и пр.'
 	-- индексы
@@ -291,10 +292,19 @@ CREATE TABLE logs (
     -- прописать ключи
 );
 
-SHOW VARIABLES LIKE "secure_file_priv"; 
+SHOW VARIABLES LIKE "secure_file_priv"; -- установил в файле my.ini путое значение!
 
 SHOW VARIABLES
 
+LOAD DATA INFILE 'csv_to_logs.csv' 
+INTO TABLE report_27
+CHARACTER SET cp1251
+FIELDS TERMINATED BY ';' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n' -- '\n'
+IGNORE 1 ROWS;
+
+/*
 LOAD DATA INFILE 'csv_to_logs.csv' 
 INTO TABLE logs
 CHARACTER SET cp1251
@@ -306,7 +316,7 @@ IGNORE 1 ROWS;
   
    
 
-INSERT INTO `report_27` (`id`, `trading_date`, `gtp`, `v_bid_so`, `t_min`, `p_max`, `change_load_down`, `change_load_up`, `trade_graph`, `p_unreg`, `v_sell_rsv`, `p_sell_rsv`, `v_buy_sdd`, `p_buy_sdd`, `korr_v`) VALUES ('1', '2019-01-01 00:01:00', 'GVIE0010', '0', '0', '0', 884, 750, '0.82', '43.4', '286128000', '1041.06', '0', '124405', '0');
+-- INSERT INTO `report_27` (`id`, `trading_date`, `gtp`, `v_bid_so`, `t_min`, `p_max`, `change_load_down`, `change_load_up`, `trade_graph`, `p_unreg`, `v_sell_rsv`, `p_sell_rsv`, `v_buy_sdd`, `p_buy_sdd`, `korr_v`) VALUES ('1', '2019-01-01 00:01:00', 'GVIE0010', '0', '0', '0', 884, 750, '0.82', '43.4', '286128000', '1041.06', '0', '124405', '0');
 /*
 INSERT INTO `report_27` (`id`, `trading_date`, `gtp`, `v_bid_so`, `t_min`, `t_max`, `change_load_down`, `change_load_up`, `trade_graph`, `p_unreg`, `v_sell_rsv`, `p_sell_rsv`, `v_buy_sdd`, `p_buy_sdd`, `korr_v`) VALUES ('1', '2019-01-01 00:01:00', 'GVIE0010', '0', '0', '0', 884, 750, '0.82', '43.4', '286128000', '1041.06', '0', '124405', '0');
 INSERT INTO `report_27` (`id`, `trading_date`, `gtp`, `v_bid_so`, `t_min`, `t_max`, `change_load_down`, `change_load_up`, `trade_graph`, `p_unreg`, `v_sell_rsv`, `p_sell_rsv`, `v_buy_sdd`, `p_buy_sdd`, `korr_v`) VALUES ('2', '2019-01-01 00:01:00', 'GVIE0010', '0', '0', '0', 698, 611, '43067200', '7.58', '5.379', '40319.3', '15515200', '533209000', '0');
