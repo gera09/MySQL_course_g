@@ -41,25 +41,29 @@ use shop;
 select * from users;
 START TRANSACTION;
 
-INSERT INTO sample.users (*)
-  VALUES (select * from shop.users where id =1);
+INSERT INTO sample.users (name, birthday_at, created_at, updated_at)
+  select name, birthday_at, created_at, updated_at 
+  from shop.users 
+  where id = 1;
 
-SELECT @last_user_id := (SELECT MAX(id) FROM users); -- опасный способ
+-- перенесем еще заказы
+INSERT INTO sample.users (name, birthday_at, created_at, updated_at)
+  select name, birthday_at, created_at, updated_at 
+  from shop.users 
+  where id = 1;
 
-INSERT INTO profiles (user_id, gender, birthday, hometown)
-  VALUES (@last_user_id, 'M', '1999-10-10', 'Moscow'); 
-  
+ 
+DELETE FROM shop.users
+          where id = 1; 
+DELETE FROM shop.users
+          where id = 1;
+         
 COMMIT;
 
 select * from sample.users;
+select * from shop.users;
 
--- пример перемещения
-    INSERT INTO Persons_Table (person_id, person_name,person_email)
-          SELECT person_id, customer_name, customer_email
-          FROM customer_table
-          WHERE "insert your where clause here";
-    DELETE FROM customer_table
-          WHERE "repeat your where clause here";
+
          
 /*
 2. Создайте представление, которое выводит название name товарной позиции из таблицы products 
