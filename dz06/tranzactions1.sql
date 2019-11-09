@@ -1,3 +1,5 @@
+/* РЕШЕНИЕ ДЗ НИЖЕ!!!
+ * 
 use shop;
 
 select @id:=user_id from orders; 
@@ -26,6 +28,7 @@ select * from numerics;
 set @start :=0;
 select @start:= @start + 1 as id, value from numerics;
 select * from numerics;
+*/
 
 use shop;
 -- describe products;
@@ -45,36 +48,52 @@ INSERT INTO sample.users (name, birthday_at, created_at, updated_at)
   select name, birthday_at, created_at, updated_at 
   from shop.users 
   where id = 1;
-
 -- перенесем еще заказы
-INSERT INTO sample.users (name, birthday_at, created_at, updated_at)
-  select name, birthday_at, created_at, updated_at 
-  from shop.users 
-  where id = 1;
+INSERT INTO sample.orders (user_id, created_at, updated_at)
+  select user_id, created_at, updated_at 
+  from shop.orders 
+  where user_id = 1;
 
- 
+DELETE FROM shop.orders
+          where user_id = 1;
 DELETE FROM shop.users
-          where id = 1; 
-DELETE FROM shop.users
-          where id = 1;
-         
+          where id = 1;   
 COMMIT;
 
 select * from sample.users;
 select * from shop.users;
+select * from sample.orders;
+select * from shop.orders;
 
+-- вставил, где надо и удалил, где надо. 
+    
 
-         
 /*
 2. Создайте представление, которое выводит название name товарной позиции из таблицы products 
 и соответствующее название каталога name из таблицы catalogs.
+*/
 
-3. (по желанию) Пусть имеется таблица с календарным полем created_at. В ней размещены разряженые 
+CREATE or replace VIEW product_type
+AS 
+  select p.name as name_product, c.name as type
+  FROM products p
+    JOIN catalogs c ON p.catalog_id = c.id;
+
+select *
+from product_type;
+
+
+/*
+ * 3. (по желанию) Пусть имеется таблица с календарным полем created_at. В ней размещены разряженые 
 календарные записи за август 2018 года '2018-08-01', '2016-08-04', '2018-08-16' и 2018-08-17. 
 Составьте запрос, который выводит полный список дат за август, выставляя в соседнем поле значение 1, 
-если дата присутствует в исходном таблице и 0, если она отсутствует.
+если дата присутствует в исходном таблице и 0, если она отсутствует.*/
 
-4. (по желанию) Пусть имеется любая таблица с календарным полем created_at. Создайте запрос, 
+
+
+
+/*
+ * 4. (по желанию) Пусть имеется любая таблица с календарным полем created_at. Создайте запрос, 
 который удаляет устаревшие записи из таблицы, оставляя только 5 самых свежих записей.
 */
 
