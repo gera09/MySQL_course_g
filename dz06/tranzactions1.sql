@@ -73,14 +73,16 @@ select * from shop.orders;
 и соответствующее название каталога name из таблицы catalogs.
 */
 
-CREATE or replace VIEW product_type
-AS 
-  select p.name as name_product, c.name as type
-  FROM products p
-    JOIN catalogs c ON p.catalog_id = c.id;
+CREATE OR replace VIEW product_type AS
+SELECT
+	p.name AS name_product,
+	c.name AS TYPE
+FROM
+	products p
+JOIN catalogsc ON
+	p.catalog_id = c.id;
 
-select *
-from product_type;
+select * from product_type;
 
 
 /*
