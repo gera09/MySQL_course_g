@@ -25,15 +25,19 @@
  * peni_kontrag
  * */
 
-drop function if exists RAND_INT;
-CREATE FUNCTION RAND_INT (minVal INT, maxVal INT)
-RETURNS INT DETERMINISTIC
-RETURN FLOOR(minVal + (RAND() * (maxVal + 1 - minVal)));
+
 
 DROP DATABASE IF EXISTS SQL_project2;
 CREATE DATABASE SQL_project2;
 USE SQL_project2;
 
+drop function if exists RAND_INT;
+CREATE FUNCTION RAND_INT (minVal INT, maxVal INT)
+RETURNS INT DETERMINISTIC
+RETURN FLOOR(minVal + (RAND() * (maxVal + 1 - minVal)));
+
+-- SHOW PROCEDURE STATUS;
+-- SHOW FUNCTION STATUS;
 
 DROP TABLE IF EXISTS gtp;
 CREATE TABLE gtp (
@@ -357,6 +361,8 @@ CREATE TABLE fact_rp5 (
     FOREIGN KEY (gtpp) REFERENCES gtp(gtpp) 
 );
 
+
+
 INSERT INTO `fact_rp5` VALUES 
 ('101','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','2','9','3','4','2','Quis rerum velit illo natus expedita doloremque officia.','Corrupti vel vel voluptatem illum sunt sed.',NULL,'3','9'),
 ('102','1970-06-11 04:56:56', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1971-06-06 18:53:58','5','2','0','7','0','Eum eos reiciendis culpa non voluptas aspernatur.','Quam facere consequatur error officia quas.',NULL,'9','1'),
@@ -504,45 +510,63 @@ CREATE TABLE links_obj_insol (
 	FOREIGN KEY (name_ses) REFERENCES gtp(name_ses) --  =============== надо будет удалить и обращаться к полю через???? или не надо удалять?
 );
 
-INSERT INTO `links_obj_insol` VALUES ('235','37965','quam',NULL,NULL),
-('236','1458560','tempora',NULL,NULL),
-('237','99','eum',NULL,NULL),
-('238','769462000','ipsa',NULL,NULL),
-('239','348413','omnis',NULL,NULL),
-('240','37559200','vel',NULL,NULL),
-('241','31973300','neque',NULL,NULL),
-('242','11','ipsa',NULL,NULL),
-('243','0','atque',NULL,NULL),
-('244','38','cum',NULL,NULL),
-('245','5790080','quia',NULL,NULL),
-('246','93','soluta',NULL,NULL),
-('247','5540880','necessitatibus',NULL,NULL),
-('248','5','dignissimos',NULL,NULL),
-('249','86037','et',NULL,NULL),
-('250','7105320','pariatur',NULL,NULL),
-('251','82122','nam',NULL,NULL),
-('252','83396500','maiores',NULL,NULL),
-('253','318241','voluptatum',NULL,NULL),
-('254','799135000','voluptatem',NULL,NULL),
-('255','715','harum',NULL,NULL),
-('256','66344','excepturi',NULL,NULL),
-('257','2','necessitatibus',NULL,NULL),
-('258','76','recusandae',NULL,NULL),
-('259','5826010','velit',NULL,NULL),
-('260','53668800','distinctio',NULL,NULL),
-('261','9420240','et',NULL,NULL),
-('262','3','ipsum',NULL,NULL),
-('263','55973','neque',NULL,NULL),
-('264','222','soluta',NULL,NULL),
-('265','33594','officia',NULL,NULL),
-('266','168','ad',NULL,NULL),
-('267','39513200','amet',NULL,NULL),
-('268','602916000','sequi',NULL,NULL),
-('269','368','inventore',NULL,NULL),
-('270','28','molestiae',NULL,NULL),
-('271','64707100','asperiores',NULL,NULL),
-('272','997616','et',NULL,NULL),
-('273','5676','ab',NULL,NULL); 
+DELIMITER //
+drop procedure if exists dowhile //
+CREATE PROCEDURE dowhile()
+begin
+	set @million = 1;
+	WHILE @million < 40 DO
+
+	INSERT INTO `links_obj_insol` (id_param,name,gtpp,name_ses) VALUES 
+(@million,select LEFT(UUID(), 8), (select gtpp from gtp where id = (select RAND_INT (1, 13))),(select name_ses from gtp where gtpp = new.gtpp));
+
+	 SET @million = @million + 1;
+	END WHILE;
+end //
+DELIMITER ;
+
+CALL dowhile();
+
+INSERT INTO `links_obj_insol` VALUES 
+('235','37965','quam', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('236','1458560','tempora', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('237','99','eum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('238','769462000','ipsa', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('239','348413','omnis', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('240','37559200','vel', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('241','31973300','neque', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('242','11','ipsa', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('243','0','atque', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('244','38','cum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('245','5790080','quia', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('246','93','soluta', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('247','5540880','necessitatibus', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('248','5','dignissimos', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('249','86037','et', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('250','7105320','pariatur', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('251','82122','nam', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('252','83396500','maiores', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('253','318241','voluptatum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('254','799135000','voluptatem', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('255','715','harum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('256','66344','excepturi', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('257','2','necessitatibus', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('258','76','recusandae', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('259','5826010','velit', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('260','53668800','distinctio', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('261','9420240','et', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('262','3','ipsum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('263','55973','neque', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('264','222','soluta', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('265','33594','officia', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('266','168','ad', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('267','39513200','amet', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('268','602916000','sequi', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('269','368','inventore', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('270','28','molestiae', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('271','64707100','asperiores', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('272','997616','et', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
+('273','5676','ab', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL); 
 
 DROP TABLE IF EXISTS insol;
 CREATE TABLE insol (
