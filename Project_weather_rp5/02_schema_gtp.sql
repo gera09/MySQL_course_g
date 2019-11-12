@@ -362,9 +362,40 @@ CREATE TABLE fact_rp5 (
 );
 
 
+DELIMITER //
+drop procedure if exists dowhile2 //
+CREATE PROCEDURE dowhile2()
+begin
+	set @million = 1;
+	WHILE @million < 51 DO
+	INSERT INTO `fact_rp5` (id, trading_date, gtpp, local_time, temp,humid, w_dir, w_speed, w_gusts, ww, www, сloudy, vv, td) VALUES 
+(
+@million, 
+FROM_UNIXTIME(RAND() * 2147483647), -- trading_date
+(select gtpp from gtp where id = (select RAND_INT (1, 13))), -- gtpp
+(select trading_date from br where id = (select RAND_INT (201, 250))), -- случайная даа из табл br - local_time
+RAND_INT (0, 9), -- temp
+RAND_INT (0, 9), -- humid
+RAND_INT (0, 9), -- w_dir
+RAND_INT (0, 9), -- w_speed
+RAND_INT (0, 9), -- w_gusts
+(select LEFT(UUID(), 8)), -- ww
+(select LEFT(UUID(), 8)), -- www
+RAND_INT (0, 9), -- сloudy
+RAND_INT (0, 9), -- vv
+RAND_INT (0, 9) -- td
+);
+	 SET @million = @million + 1;
+	END WHILE;
+end //
+DELIMITER ;
 
-INSERT INTO `fact_rp5` VALUES 
-('101','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','2','9','3','4','2','Quis rerum velit illo natus expedita doloremque officia.','Corrupti vel vel voluptatem illum sunt sed.',NULL,'3','9'),
+-- select @x;
+CALL dowhile2();
+
+
+/*INSERT INTO `fact_rp5` VALUES 
+('101','0000-00-00 00:00:00'), (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','2','9','3','4','2','Quis rerum velit illo natus expedita doloremque officia.','Corrupti vel vel voluptatem illum sunt sed.',NULL,'3','9'),
 ('102','1970-06-11 04:56:56', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1971-06-06 18:53:58','5','2','0','7','0','Eum eos reiciendis culpa non voluptas aspernatur.','Quam facere consequatur error officia quas.',NULL,'9','1'),
 ('103','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1993-10-24 17:32:09','0','6','6','6','8','Reiciendis fuga consequatur quaerat sint reiciendis illo.','Aut natus hic quam aperiam atque et dolor.',NULL,'6','0'),
 ('104','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','5','3','3','0','8','Consequuntur qui totam minima iste.','Natus corporis tenetur et consectetur.',NULL,'1','4'),
@@ -414,7 +445,7 @@ INSERT INTO `fact_rp5` VALUES
 ('148','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1992-01-15 03:54:26','7','0','2','4','4','Enim non aut perferendis.','Non voluptatem occaecati explicabo voluptas.',NULL,'7','3'),
 ('149','2011-05-16 06:37:51', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','9','3','1','8','8','Nostrum alias aut voluptatem distinctio expedita molestiae commodi.','Cupiditate illo et est quae.',NULL,'2','8'),
 ('150','1995-04-24 16:00:37', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','1','0','7','2','7','Maiores libero ut consequatur ut sed.','Qui beatae maxime ipsum suscipit quia illo veniam.',NULL,'9','4'); 
-
+*/
 
 DROP TABLE IF EXISTS forecast_rp5;
 CREATE TABLE forecast_rp5 (
@@ -516,18 +547,19 @@ CREATE PROCEDURE dowhile()
 begin
 	set @million = 1;
 	WHILE @million < 40 DO
-
+	
 	INSERT INTO `links_obj_insol` (id_param,name,gtpp,name_ses) VALUES 
-(@million,select LEFT(UUID(), 8), (select gtpp from gtp where id = (select RAND_INT (1, 13))),(select name_ses from gtp where gtpp = new.gtpp));
+(@million, (select LEFT(UUID(), 8)), (select @x := (select gtpp from gtp where id = (select RAND_INT (1, 13)))),(select name_ses from gtp where gtpp = @x limit 1));
 
 	 SET @million = @million + 1;
 	END WHILE;
 end //
 DELIMITER ;
 
+-- select @x;
 CALL dowhile();
 
-INSERT INTO `links_obj_insol` VALUES 
+/*INSERT INTO `links_obj_insol` VALUES 
 ('235','37965','quam', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
 ('236','1458560','tempora', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
 ('237','99','eum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
@@ -566,7 +598,30 @@ INSERT INTO `links_obj_insol` VALUES
 ('270','28','molestiae', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
 ('271','64707100','asperiores', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
 ('272','997616','et', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('273','5676','ab', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL); 
+('273','5676','ab', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL); */
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- -==================================================================================
+
+
+
+
+
+
+
+
+
 
 DROP TABLE IF EXISTS insol;
 CREATE TABLE insol (
@@ -585,6 +640,8 @@ CREATE TABLE insol (
     FOREIGN KEY (gtpp) REFERENCES links_obj_insol(gtpp), --  =============== надо будет удалить и обращаться к полю через links_obj_insol
     FOREIGN KEY (name) REFERENCES links_obj_insol(name) --  =============== надо будет удалить и обращаться к полю через links_obj_insol
 );
+
+
 
 INSERT INTO `insol` VALUES ('401',NULL,NULL,NULL,NULL,'136050023.18384'),
 ('402',NULL,NULL,NULL,NULL,'0.0145186'),

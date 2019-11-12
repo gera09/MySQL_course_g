@@ -93,7 +93,7 @@ drop procedure if exists dowhile //
 CREATE PROCEDURE dowhile()
 begin
 	set @million = 0;
-	WHILE @million < 1000000 DO
+	WHILE @million < 1000 DO
 	    insert into users (name, birthday_at, created_at, updated_at) values 
 		('Никодим', 
 		 '2019-01-01',
