@@ -7,11 +7,32 @@
  * Для примера заполнения я взял по 50 строк. В некоторых таблицах меньше, потому что
  * это вся существующая информация, которая может в них содержаться.
  * 
+ * Таблица gtp является центральной и содержит инфомацию об соотношении между gtpp - gtp - name_ses. 
+ * Соотношение gtpp = name_ses. К одной gtpp может относиться несколько gtp. 
+ * 
+ * Таблица logs заполняется автоматически. Пока еще не придумал, как ее заполнять. По идее надо писать
+ * только про успешные пакетные вставки (количество успешных insert) и ошибки вставки.
+ * Надо решить, обновлять данные, если за один и тот же торговый час будет вставляться информация, или просто пропускать вставку, 
+ * если значение date_time не уникально.
+ * 
  * В БД нет полей not null - это потому что периодически совершенно в любых колонках могут возникать 
  * значения null.
  */
 
-/* table's name:
+/* Состав КП:
+ * 10 таблиц (9 innoBD и 1 Archive) 
+ * 3 тригера
+ * 3 процедуры
+ * 1 функцию
+ * Скрипты наполнения таблиц
+ * 
+ * Надо:
+ * 2 представления
+ * запросы с JOIN
+ * вложенные запросы
+ *  
+ * 
+ * Имена таблиц:
  * report_27 - отчет 27
  * report_28 - отчет 28
  * br - отчет с сайта БР
@@ -22,12 +43,6 @@
  * links_meteo_lok - список локаций метеообъектов (добавить расположение СЭС и дистанцию с метеостанцией)
  * gtp - список ГТП
  * logs - логи (тип движка ARCHIVE) - логирование вставки в таблицы report_27, report_28, br
- * 
- * На будущее сделать таблицы:
- * ku
- * fin_rez
- * peni_mounth
- * peni_kontrag
  * */
 
 
@@ -41,15 +56,13 @@ CREATE FUNCTION RAND_INT (minVal INT, maxVal INT)
 RETURNS INT DETERMINISTIC
 RETURN FLOOR(minVal + (RAND() * (maxVal + 1 - minVal)));
 
--- SHOW PROCEDURE STATUS;
--- SHOW FUNCTION STATUS;
 
 DROP TABLE IF EXISTS gtp;
 CREATE TABLE gtp (
 	id SERIAL PRIMARY KEY,
-	gtps VARCHAR(100) COMMENT 'SVIE0001',  -- ============ заменить на VARCHAR(8)
-	gtpp VARCHAR(100) COMMENT 'PVIE0001',  -- ============ заменить на VARCHAR(8)
-	gtp VARCHAR(100) COMMENT 'GVIE0001',  -- ============ заменить на VARCHAR(8)
+	gtps VARCHAR(8) COMMENT 'SVIE0001',
+	gtpp VARCHAR(8) COMMENT 'PVIE0001',
+	gtp VARCHAR(8) COMMENT 'GVIE0001',
 	name_ses VARCHAR(100) COMMENT 'наименование СЭС',
 	index id_gtp (id),
 	index gtps_gtp (gtps),
@@ -75,16 +88,27 @@ insert into gtp (gtps, gtpp, gtp, name_ses)
   ('VIE0150', concat('P', gtps), concat('G', SUBSTR(gtps, 1,6), SUBSTR(gtps, 7,1) + '3'), concat('name_ses_',gtps))
  ;
 
+DROP TABLE IF EXISTS logs;
+CREATE TABLE logs (
+	log_time DATETIME not null COMMENT 'время операции вставки',
+	table_name VARCHAR(50) not null COMMENT 'имя таблицы в которую была вставка',
+	key_id bigint not null COMMENT 'id строки',
+	log_txt VARCHAR(1000) not null COMMENT 'текст лога',
+	insert_name VARCHAR(50) not null COMMENT 'наименование операции или примечание'
+	-- нужны ли индексы? размер лога может быть очень большим, но пользоваться им будут крайне редко (только при наличии ошибок)
+	-- index(log_time),
+	-- index(status)
+) ENGINE=ARCHIVE;
+
+DROP trigger IF EXISTS insert_report_27;
+DROP trigger IF EXISTS insert_report_28;
+DROP trigger IF EXISTS insert_br;
 
 DROP TABLE IF EXISTS report_27;
 CREATE TABLE report_27 (
 	id SERIAL PRIMARY KEY,
-	-- trading_date DATE COMMENT 'Дата, пример в отчете (2019-10-13)', -- STR_TO_DATE() --https://incode.pro/mysql/rabota-s-datami-v-mysql.html ======================
-	-- trading_hour TINYINT COMMENT 'Торговый час (00 или 23), пример в отчете (01-02)',	-- объединить с датой в datetime -- 1 =====================================
-	trading_date DATETIME null, -- DATETIME
-	-- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s'), -- 2019-10-13 - дата, 00 - час          -- 1
-	-- select STR_TO_DATE('2019-10-13 00', '%Y-%m-%d %H:%i:%s') 
-	gtp VARCHAR(100) null COMMENT 'GVIE0001', -- ============ заменить на VARCHAR(8)
+	trading_date DATETIME null, -- DATETIME  -- select STR_TO_DATE('2019-10-13 01', '%Y-%m-%d %H:%i:%s'), -- 2019-10-13 - дата, 01 - час    -- 1
+	gtp VARCHAR(8) null COMMENT 'GVIE0001',	
 	-- stair FLOAT COMMENT 'Заявка субъекта - Ступень', -- пустая колонка												 -- 2
 	-- p_stair FLOAT COMMENT 'Заявка субъекта - Цена руб/(МВт*час)', -- пустая колонка									 -- 3
 	v_bid_so FLOAT UNSIGNED null COMMENT 'Заявка субъекта - Количество МВт*час.',											 -- 4
@@ -109,72 +133,77 @@ CREATE TABLE report_27 (
 	-- korr_stair UNSIGNED COMMENT 'Скорректированная заявка субъекта - Ступень'										-- 22
     -- korr_p UNSIGNED COMMENT 'Скорректированная заявка субъекта - Цена руб/(МВт*час)' 								-- 23
     korr_v FLOAT UNSIGNED null COMMENT 'Скорректированная заявка субъекта - Количество МВт*час',								-- 24
-    -- gtpp VARCHAR(100) null COMMENT 'PVIE0001',  -- ============ заменить на VARCHAR(8)
 	index(trading_date),
 	index(gtp),
     FOREIGN KEY (gtp) REFERENCES gtp(gtp)
 );
 
-INSERT INTO `report_27` VALUES 
-('101','2007-06-29 13:49:45', (select gtp from gtp where id = (select RAND_INT (1, 13))),'1072380','5800','7785150','3','8','8','9','1','8','7','8','0'),
-('102','1988-05-23 07:39:43', (select gtp from gtp where id = (select RAND_INT (1, 13))),'57813.8','743309','165358','4','3','6','1','8','8','9','1','3'),
-('103','1995-09-22 13:44:38', (select gtp from gtp where id = (select RAND_INT (1, 13))),'7.2084','42989','9185970','4','1','4','2','1','5','2','5','6'),
-('104','1971-07-03 09:50:35', (select gtp from gtp where id = (select RAND_INT (1, 13))),'7847','2202','2089','6','7','6','3','6','5','6','1','8'),
-('105','1974-08-06 17:21:02', (select gtp from gtp where id = (select RAND_INT (1, 13))),'76.7409','30630','5469','1','1','8','3','8','2','1','5','1'),
-('106','2010-01-07 01:40:38', (select gtp from gtp where id = (select RAND_INT (1, 13))),'40177800','132','26','6','2','2','6','9','3','6','0','8'),
-('107','1988-03-27 12:44:37', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','685443000','17612','5','4','7','9','6','9','9','1','9'),
-('108','1976-12-26 01:34:48', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','34660200','0','6','6','9','1','2','3','8','3','4'),
-('109','1990-01-24 08:25:46', (select gtp from gtp where id = (select RAND_INT (1, 13))),'1696200','37','8505340','9','5','9','0','1','5','0','0','5'),
-('110','2002-08-28 05:16:45', (select gtp from gtp where id = (select RAND_INT (1, 13))),'8167570','2501840','63567900','0','3','3','7','4','8','0','5','5'),
-('111','1997-01-06 16:47:35', (select gtp from gtp where id = (select RAND_INT (1, 13))),'1.99837','532235000','81238','9','5','2','9','9','8','2','3','4'),
-('112','2006-11-29 07:50:15', (select gtp from gtp where id = (select RAND_INT (1, 13))),'3287950','27','2790140','0','6','8','3','6','4','8','0','8'),
-('113','2015-06-16 05:01:31', (select gtp from gtp where id = (select RAND_INT (1, 13))),'32.1299','50334500','7348','4','6','8','6','6','5','5','9','5'),
-('114','1992-09-25 02:12:21', (select gtp from gtp where id = (select RAND_INT (1, 13))),'11030.5','890783','32262','3','5','3','8','0','3','6','4','0'),
-('115','2006-08-07 01:04:48', (select gtp from gtp where id = (select RAND_INT (1, 13))),'40178.8','0','708452','9','9','7','9','9','9','1','8','0'),
-('116','1974-10-20 16:43:32', (select gtp from gtp where id = (select RAND_INT (1, 13))),'343956','8192900','7830060','6','5','5','9','0','0','2','8','5'),
-('117','1987-01-27 14:33:50', (select gtp from gtp where id = (select RAND_INT (1, 13))),'8879900','67','374664','7','5','8','0','3','9','6','9','5'),
-('118','1986-08-17 11:22:41', (select gtp from gtp where id = (select RAND_INT (1, 13))),'3.40645','694','29962','6','3','0','3','3','6','0','5','9'),
-('119','2013-08-19 17:21:27', (select gtp from gtp where id = (select RAND_INT (1, 13))),'34307700','4029','5','4','8','4','9','3','9','1','1','4'),
-('120','1992-01-20 06:25:32', (select gtp from gtp where id = (select RAND_INT (1, 13))),'3615','69873500','13718','5','5','5','9','5','3','8','9','0'),
-('121','2011-01-10 10:46:25', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','0','62378','1','5','5','5','0','2','9','3','8'),
-('122','1993-12-23 12:04:00', (select gtp from gtp where id = (select RAND_INT (1, 13))),'20206000','5928','798618','2','2','1','7','3','3','3','7','9'),
-('123','1977-10-29 05:19:47', (select gtp from gtp where id = (select RAND_INT (1, 13))),'19347200','377','8725','2','0','0','0','1','3','5','0','9'),
-('124','1985-09-07 09:22:45', (select gtp from gtp where id = (select RAND_INT (1, 13))),'65.6175','31871000','0','5','4','9','4','4','0','7','1','1'),
-('125','2003-10-27 21:36:24', (select gtp from gtp where id = (select RAND_INT (1, 13))),'12415700','0','0','1','7','8','2','5','0','4','3','6'),
-('126','1983-01-24 07:06:33', (select gtp from gtp where id = (select RAND_INT (1, 13))),'61773','34','9598','9','0','6','6','8','8','3','2','3'),
-('127','1978-04-07 12:10:31', (select gtp from gtp where id = (select RAND_INT (1, 13))),'4418.56','43545600','40613','5','7','4','9','3','3','6','6','8'),
-('128','2018-04-11 03:31:45', (select gtp from gtp where id = (select RAND_INT (1, 13))),'1988.01','63888500','57131700','2','6','5','8','1','3','2','2','6'),
-('129','1994-05-21 16:09:05', (select gtp from gtp where id = (select RAND_INT (1, 13))),'417735','73248','0','3','3','7','9','2','3','2','2','5'),
-('130','2013-10-06 00:33:29', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','0','97401','3','1','4','9','8','7','1','1','0'),
-('131','1992-09-01 09:34:16', (select gtp from gtp where id = (select RAND_INT (1, 13))),'5674.3','256888000','4582600','5','3','2','8','2','4','9','7','4'),
-('132','2009-03-16 13:43:35', (select gtp from gtp where id = (select RAND_INT (1, 13))),'42038200','329','833','4','0','0','0','5','7','6','5','5'),
-('133','1978-01-15 17:03:33', (select gtp from gtp where id = (select RAND_INT (1, 13))),'645.674','449103','906','3','3','3','5','1','9','4','8','0'),
-('134','1991-05-03 00:42:47', (select gtp from gtp where id = (select RAND_INT (1, 13))),'26.3','2','167272','2','0','2','7','2','5','8','1','5'),
-('135','2002-12-31 08:29:39', (select gtp from gtp where id = (select RAND_INT (1, 13))),'6413530','986','98022','7','0','9','1','0','3','1','3','4'),
-('136','2018-05-02 18:15:58', (select gtp from gtp where id = (select RAND_INT (1, 13))),'70241','0','29023','1','6','1','4','4','6','9','6','2'),
-('137','1993-09-30 14:11:37', (select gtp from gtp where id = (select RAND_INT (1, 13))),'63165000','196252000','3','5','1','8','8','6','6','8','0','1'),
-('138','2000-08-15 13:16:49', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','6933','91','0','0','0','4','2','9','9','5','6'),
-('139','2002-09-12 06:55:16', (select gtp from gtp where id = (select RAND_INT (1, 13))),'432.222','30401200','39','0','0','5','3','1','1','1','8','2'),
-('140','1980-06-27 11:38:06', (select gtp from gtp where id = (select RAND_INT (1, 13))),'70165.5','411692','83727','1','5','7','8','5','4','7','9','2'),
-('141','1982-02-12 19:34:33', (select gtp from gtp where id = (select RAND_INT (1, 13))),'14628900','45335','52248','0','0','2','7','1','1','0','2','2'),
-('142','2009-07-16 18:59:15', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','0','0','0','5','6','7','2','2','2','8','0'),
-('143','2018-11-06 23:49:24', (select gtp from gtp where id = (select RAND_INT (1, 13))),'3366.11','394','707','7','1','5','9','8','8','3','6','8'),
-('144','2007-12-16 08:30:06', (select gtp from gtp where id = (select RAND_INT (1, 13))),'2698710','415397000','48','8','6','5','4','3','8','0','4','1'),
-('145','1993-05-26 20:12:13', (select gtp from gtp where id = (select RAND_INT (1, 13))),'2475480','44','1','2','4','9','6','2','8','8','8','2'),
-('146','2007-09-19 13:21:47', (select gtp from gtp where id = (select RAND_INT (1, 13))),'723535','277559000','799375','7','2','6','5','2','8','2','6','9'),
-('147','2016-02-23 13:46:26', (select gtp from gtp where id = (select RAND_INT (1, 13))),'680.31','477','77752','1','2','7','1','8','0','9','4','0'),
-('148','1983-07-18 21:03:06', (select gtp from gtp where id = (select RAND_INT (1, 13))),'12289400','529294','22593800','7','1','1','1','6','8','7','4','1'),
-('149','1998-01-20 03:30:04', (select gtp from gtp where id = (select RAND_INT (1, 13))),'5678140','450','384623','0','9','6','9','8','8','9','6','5'),
-('150','2011-07-25 22:04:58', (select gtp from gtp where id = (select RAND_INT (1, 13))),'2408680','6183','253736','4','3','5','4','2','0','0','3','5'); 
+DELIMITER //
+create trigger insert_report_27 after insert on report_27
+for each row
+begin
+	insert into logs (log_time, table_name, key_id, log_txt, insert_name) values 
+	(now(), 'report_27', (select id from report_27 order by id desc limit 1), 'успешная вставка', 'insert');
+end //
+DELIMITER ;
+
+INSERT INTO `report_27` (trading_date,gtp,v_bid_so,t_min,p_max,change_load_down,change_load_up,trade_graph,p_unreg,v_sell_rsv,p_sell_rsv,v_buy_sdd,p_buy_sdd,korr_v) VALUES 
+('2007-06-29 13:49:45', (select gtp from gtp where id = (select RAND_INT (1, 13))),'1072380','5800','7785150','3','8','8','9','1','8','7','8','0'),
+('1988-05-23 07:39:43', (select gtp from gtp where id = (select RAND_INT (1, 13))),'57813.8','743309','165358','4','3','6','1','8','8','9','1','3'),
+('1995-09-22 13:44:38', (select gtp from gtp where id = (select RAND_INT (1, 13))),'7.2084','42989','9185970','4','1','4','2','1','5','2','5','6'),
+('1971-07-03 09:50:35', (select gtp from gtp where id = (select RAND_INT (1, 13))),'7847','2202','2089','6','7','6','3','6','5','6','1','8'),
+('1974-08-06 17:21:02', (select gtp from gtp where id = (select RAND_INT (1, 13))),'76.7409','30630','5469','1','1','8','3','8','2','1','5','1'),
+('2010-01-07 01:40:38', (select gtp from gtp where id = (select RAND_INT (1, 13))),'40177800','132','26','6','2','2','6','9','3','6','0','8'),
+('1988-03-27 12:44:37', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','685443000','17612','5','4','7','9','6','9','9','1','9'),
+('1976-12-26 01:34:48', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','34660200','0','6','6','9','1','2','3','8','3','4'),
+('1990-01-24 08:25:46', (select gtp from gtp where id = (select RAND_INT (1, 13))),'1696200','37','8505340','9','5','9','0','1','5','0','0','5'),
+('2002-08-28 05:16:45', (select gtp from gtp where id = (select RAND_INT (1, 13))),'8167570','2501840','63567900','0','3','3','7','4','8','0','5','5'),
+('1997-01-06 16:47:35', (select gtp from gtp where id = (select RAND_INT (1, 13))),'1.99837','532235000','81238','9','5','2','9','9','8','2','3','4'),
+('2006-11-29 07:50:15', (select gtp from gtp where id = (select RAND_INT (1, 13))),'3287950','27','2790140','0','6','8','3','6','4','8','0','8'),
+('2015-06-16 05:01:31', (select gtp from gtp where id = (select RAND_INT (1, 13))),'32.1299','50334500','7348','4','6','8','6','6','5','5','9','5'),
+('1992-09-25 02:12:21', (select gtp from gtp where id = (select RAND_INT (1, 13))),'11030.5','890783','32262','3','5','3','8','0','3','6','4','0'),
+('2006-08-07 01:04:48', (select gtp from gtp where id = (select RAND_INT (1, 13))),'40178.8','0','708452','9','9','7','9','9','9','1','8','0'),
+('1974-10-20 16:43:32', (select gtp from gtp where id = (select RAND_INT (1, 13))),'343956','8192900','7830060','6','5','5','9','0','0','2','8','5'),
+('1987-01-27 14:33:50', (select gtp from gtp where id = (select RAND_INT (1, 13))),'8879900','67','374664','7','5','8','0','3','9','6','9','5'),
+('1986-08-17 11:22:41', (select gtp from gtp where id = (select RAND_INT (1, 13))),'3.40645','694','29962','6','3','0','3','3','6','0','5','9'),
+('2013-08-19 17:21:27', (select gtp from gtp where id = (select RAND_INT (1, 13))),'34307700','4029','5','4','8','4','9','3','9','1','1','4'),
+('1992-01-20 06:25:32', (select gtp from gtp where id = (select RAND_INT (1, 13))),'3615','69873500','13718','5','5','5','9','5','3','8','9','0'),
+('2011-01-10 10:46:25', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','0','62378','1','5','5','5','0','2','9','3','8'),
+('1993-12-23 12:04:00', (select gtp from gtp where id = (select RAND_INT (1, 13))),'20206000','5928','798618','2','2','1','7','3','3','3','7','9'),
+('1977-10-29 05:19:47', (select gtp from gtp where id = (select RAND_INT (1, 13))),'19347200','377','8725','2','0','0','0','1','3','5','0','9'),
+('1985-09-07 09:22:45', (select gtp from gtp where id = (select RAND_INT (1, 13))),'65.6175','31871000','0','5','4','9','4','4','0','7','1','1'),
+('2003-10-27 21:36:24', (select gtp from gtp where id = (select RAND_INT (1, 13))),'12415700','0','0','1','7','8','2','5','0','4','3','6'),
+('1983-01-24 07:06:33', (select gtp from gtp where id = (select RAND_INT (1, 13))),'61773','34','9598','9','0','6','6','8','8','3','2','3'),
+('1978-04-07 12:10:31', (select gtp from gtp where id = (select RAND_INT (1, 13))),'4418.56','43545600','40613','5','7','4','9','3','3','6','6','8'),
+('2018-04-11 03:31:45', (select gtp from gtp where id = (select RAND_INT (1, 13))),'1988.01','63888500','57131700','2','6','5','8','1','3','2','2','6'),
+('1994-05-21 16:09:05', (select gtp from gtp where id = (select RAND_INT (1, 13))),'417735','73248','0','3','3','7','9','2','3','2','2','5'),
+('2013-10-06 00:33:29', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','0','97401','3','1','4','9','8','7','1','1','0'),
+('1992-09-01 09:34:16', (select gtp from gtp where id = (select RAND_INT (1, 13))),'5674.3','256888000','4582600','5','3','2','8','2','4','9','7','4'),
+('2009-03-16 13:43:35', (select gtp from gtp where id = (select RAND_INT (1, 13))),'42038200','329','833','4','0','0','0','5','7','6','5','5'),
+('1978-01-15 17:03:33', (select gtp from gtp where id = (select RAND_INT (1, 13))),'645.674','449103','906','3','3','3','5','1','9','4','8','0'),
+('1991-05-03 00:42:47', (select gtp from gtp where id = (select RAND_INT (1, 13))),'26.3','2','167272','2','0','2','7','2','5','8','1','5'),
+('2002-12-31 08:29:39', (select gtp from gtp where id = (select RAND_INT (1, 13))),'6413530','986','98022','7','0','9','1','0','3','1','3','4'),
+('2018-05-02 18:15:58', (select gtp from gtp where id = (select RAND_INT (1, 13))),'70241','0','29023','1','6','1','4','4','6','9','6','2'),
+('1993-09-30 14:11:37', (select gtp from gtp where id = (select RAND_INT (1, 13))),'63165000','196252000','3','5','1','8','8','6','6','8','0','1'),
+('2000-08-15 13:16:49', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','6933','91','0','0','0','4','2','9','9','5','6'),
+('2002-09-12 06:55:16', (select gtp from gtp where id = (select RAND_INT (1, 13))),'432.222','30401200','39','0','0','5','3','1','1','1','8','2'),
+('1980-06-27 11:38:06', (select gtp from gtp where id = (select RAND_INT (1, 13))),'70165.5','411692','83727','1','5','7','8','5','4','7','9','2'),
+('1982-02-12 19:34:33', (select gtp from gtp where id = (select RAND_INT (1, 13))),'14628900','45335','52248','0','0','2','7','1','1','0','2','2'),
+('2009-07-16 18:59:15', (select gtp from gtp where id = (select RAND_INT (1, 13))),'0','0','0','0','5','6','7','2','2','2','8','0'),
+('2018-11-06 23:49:24', (select gtp from gtp where id = (select RAND_INT (1, 13))),'3366.11','394','707','7','1','5','9','8','8','3','6','8'),
+('2007-12-16 08:30:06', (select gtp from gtp where id = (select RAND_INT (1, 13))),'2698710','415397000','48','8','6','5','4','3','8','0','4','1'),
+('1993-05-26 20:12:13', (select gtp from gtp where id = (select RAND_INT (1, 13))),'2475480','44','1','2','4','9','6','2','8','8','8','2'),
+('2007-09-19 13:21:47', (select gtp from gtp where id = (select RAND_INT (1, 13))),'723535','277559000','799375','7','2','6','5','2','8','2','6','9'),
+('2016-02-23 13:46:26', (select gtp from gtp where id = (select RAND_INT (1, 13))),'680.31','477','77752','1','2','7','1','8','0','9','4','0'),
+('1983-07-18 21:03:06', (select gtp from gtp where id = (select RAND_INT (1, 13))),'12289400','529294','22593800','7','1','1','1','6','8','7','4','1'),
+('1998-01-20 03:30:04', (select gtp from gtp where id = (select RAND_INT (1, 13))),'5678140','450','384623','0','9','6','9','8','8','9','6','5'),
+('2011-07-25 22:04:58', (select gtp from gtp where id = (select RAND_INT (1, 13))),'2408680','6183','253736','4','3','5','4','2','0','0','3','5'); 
 
 DROP TABLE IF EXISTS report_28;
 CREATE TABLE report_28 (
 	id SERIAL PRIMARY KEY,
-	-- trading_date DATE COMMENT 'Дата, пример в отчете (2019-10-13)', -- STR_TO_DATE() --https://incode.pro/mysql/rabota-s-datami-v-mysql.html
-	-- trading_hour TINYINT COMMENT 'Торговый час (00 или 23), пример в отчете (01-02)',	-- объединить с датой в datetime 
-	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          -- 1
-	-- select STR_TO_DATE('2019-10-13 00', '%Y-%m-%d %H:%i:%s')
-	gtpp VARCHAR(100) COMMENT 'PVIE0001',  -- ============ заменить на VARCHAR(8)
+	trading_date DATETIME null, -- select STR_TO_DATE('2019-10-13 01', '%Y-%m-%d %H:%i:%s')		 			             -- 1
+	gtpp VARCHAR(8) COMMENT 'PVIE0001',
 	-- stair FLOAT COMMENT 'Заявка субъекта - Ступень', -- пустая колонка												 -- 2
 	-- p_stair FLOAT COMMENT 'Заявка субъекта - Цена руб/(МВт*час)', -- пустая колонка								 	 -- 3
 	-- v_bid_so FLOAT UNSIGNED COMMENT 'Заявка субъекта - Заявленный объем в АТС МВт*час',								 -- 4
@@ -210,6 +239,15 @@ CREATE TABLE report_28 (
 	index(gtpp),
     FOREIGN KEY (gtpp) REFERENCES gtp(gtpp)
 );
+
+DELIMITER //
+create trigger insert_report_28 after insert on report_28
+for each row
+begin
+	insert into logs (log_time, table_name, key_id, log_txt, insert_name) values 
+	(now(), 'report_28', (select id from report_28 order by id desc limit 1), 'успешная вставка', 'insert');
+end //
+DELIMITER ;
 
 INSERT INTO `report_28` VALUES 
 ('401','2005-03-26 07:09:21', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'925','0','0','4','6','7','4','2'),
@@ -267,7 +305,7 @@ DROP TABLE IF EXISTS br;
 CREATE TABLE br (
 	id SERIAL PRIMARY KEY,
 	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
-	gtp VARCHAR(100) COMMENT 'GVIE0001',  -- ============ заменить на VARCHAR(8)
+	gtp VARCHAR(8) COMMENT 'GVIE0001',
 	tg FLOAT UNSIGNED COMMENT 'торговый график',															 
 	PminPDG FLOAT UNSIGNED,																		 
 	PmaxPDG  FLOAT UNSIGNED,	
@@ -291,6 +329,15 @@ CREATE TABLE br (
 	index(gtp),
     FOREIGN KEY (gtp) REFERENCES gtp(gtp) 
 );
+
+DELIMITER //
+create trigger insert_br after insert on br
+for each row
+begin
+	insert into logs (log_time, table_name, key_id, log_txt, insert_name) values 
+	(now(), 'br', (select id from br order by id desc limit 1), 'успешная вставка', 'insert');
+end //
+DELIMITER ;
 
 INSERT INTO `br` VALUES 
 ('201','1990-10-28 05:49:17', (select gtp from gtp where id = (select RAND_INT (1, 13))),'206.872','0','5','0','6551400','0','0','6678410','315828','170048','8277190','311984','0','4','2','5','21','0'),
@@ -348,7 +395,7 @@ DROP TABLE IF EXISTS fact_rp5;
 CREATE TABLE fact_rp5 (
 	id SERIAL PRIMARY KEY,
 	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
-	gtpp VARCHAR(100) COMMENT 'PVIE0001',  -- ============ заменить на VARCHAR(8)	
+	gtpp VARCHAR(8) COMMENT 'PVIE0001',  
 	local_time DATETIME null COMMENT 'местн. время',-- STR_TO_DATE('2019г. 1 ноября 16:00', '%d.%m.%Y %H:%i:%s') -часть после заяпятой  не адаптирована														 
 	temp FLOAT UNSIGNED,																		 
 	humid  FLOAT unsigned  COMMENT 'влажность',	
@@ -398,65 +445,11 @@ DELIMITER ;
 -- select @x;
 CALL dowhile2_fact_rp5();
 
-
-/*INSERT INTO `fact_rp5` VALUES 
-('101','0000-00-00 00:00:00'), (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','2','9','3','4','2','Quis rerum velit illo natus expedita doloremque officia.','Corrupti vel vel voluptatem illum sunt sed.',NULL,'3','9'),
-('102','1970-06-11 04:56:56', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1971-06-06 18:53:58','5','2','0','7','0','Eum eos reiciendis culpa non voluptas aspernatur.','Quam facere consequatur error officia quas.',NULL,'9','1'),
-('103','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1993-10-24 17:32:09','0','6','6','6','8','Reiciendis fuga consequatur quaerat sint reiciendis illo.','Aut natus hic quam aperiam atque et dolor.',NULL,'6','0'),
-('104','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','5','3','3','0','8','Consequuntur qui totam minima iste.','Natus corporis tenetur et consectetur.',NULL,'1','4'),
-('105','1970-01-16 18:34:07', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','4','8','8','4','4','Nesciunt rerum id labore quae earum nemo.','Similique suscipit nihil vel quia aut debitis ut.',NULL,'5','2'),
-('106','1981-05-25 22:55:56', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','5','7','0','4','4','Eaque consectetur labore ut et.','Maiores magni aut delectus.',NULL,'7','2'),
-('107','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1998-01-21 07:26:07','5','9','4','5','3','Ratione hic temporibus sed in.','Consectetur in reprehenderit nobis officiis totam.',NULL,'7','8'),
-('108','2016-03-21 08:43:20', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1994-12-18 00:25:40','5','7','6','4','8','Soluta distinctio dolor quos quas.','Id consequatur quia modi quisquam enim recusandae dolorem est.',NULL,'5','8'),
-('109','2014-03-29 20:57:49', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','4','8','6','3','7','Accusantium dignissimos quis facilis.','Sequi quasi accusantium ut sapiente non soluta.',NULL,'6','0'),
-('110','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1982-06-01 08:55:39','5','6','8','2','2','Unde beatae sint id modi quis natus qui.','Saepe vel aspernatur non.',NULL,'0','2'),
-('111','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','4','3','5','1','7','Quod a repudiandae et consectetur aut nihil a.','Quia quisquam facere nostrum eos nisi.',NULL,'1','7'),
-('112','1984-07-07 05:46:42', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2018-08-15 10:14:53','1','4','6','6','5','Exercitationem quibusdam veritatis veniam ex aperiam nulla laudantium.','Consequatur dolores officiis quaerat dolorem laudantium suscipit.',NULL,'5','5'),
-('113','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1974-03-11 09:12:03','1','4','0','9','8','Error optio doloribus iste qui eum nostrum ea.','Esse eum eum qui debitis.',NULL,'6','5'),
-('114','2000-08-12 20:23:11', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','7','8','9','9','0','Aut iusto est voluptatem.','Corrupti magnam dolor possimus autem consectetur.',NULL,'2','9'),
-('115','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1976-01-10 08:30:39','3','6','4','7','8','Officia aut consequatur natus corporis in deserunt laboriosam.','A dolor suscipit voluptatem magnam aliquid dolore quia.',NULL,'5','0'),
-('116','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1998-01-14 23:20:06','5','4','5','1','7','Fugit quia accusantium cumque sint voluptas.','Est dolorem et deleniti et voluptas quae.',NULL,'9','8'),
-('117','1973-11-09 21:22:14', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','2','9','1','8','7','Et voluptatem et quae exercitationem.','Ut sed omnis dolor asperiores consequatur quis voluptatum.',NULL,'9','3'),
-('118','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2016-06-14 23:20:38','3','9','1','5','2','Excepturi assumenda voluptatem est quod quis sint tempora.','Numquam eius facere consequatur perspiciatis.',NULL,'7','3'),
-('119','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','8','2','3','0','7','Est aut reprehenderit magnam quam placeat dolor.','Voluptatem esse rerum nisi fuga voluptatem id.',NULL,'6','9'),
-('120','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','6','2','2','9','5','Cupiditate voluptatibus odio aut cupiditate numquam minima enim.','Quo ea ea ut.',NULL,'8','1'),
-('121','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2019-08-10 09:26:04','5','7','3','4','5','Unde reprehenderit et minima rerum voluptatem repudiandae.','Dolor omnis delectus aperiam.',NULL,'8','7'),
-('122','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1979-12-11 06:45:38','1','7','1','5','3','Accusamus magni laboriosam est et odio.','Odio vero nemo nesciunt voluptatem aut maiores.',NULL,'5','5'),
-('123','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','8','9','0','6','5','Suscipit ut ipsum inventore.','Enim necessitatibus ullam officiis distinctio corporis nihil rem.',NULL,'1','2'),
-('124','2015-06-23 19:09:32', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','9','5','9','2','6','Dignissimos voluptas quod quia ratione laudantium doloremque.','Molestiae incidunt eaque architecto rerum voluptatibus.',NULL,'4','6'),
-('125','2011-12-03 15:08:25', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1996-10-07 00:05:23','0','1','7','1','9','Aperiam repudiandae dolore ut tempora nostrum vel.','Culpa laborum dolor dolorem labore ipsa dicta aliquid.',NULL,'0','4'),
-('126','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','6','1','8','9','0','Et omnis non eos qui architecto tempore.','Nostrum et est asperiores aut quae voluptas nobis.',NULL,'5','8'),
-('127','2009-06-24 04:56:01', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','7','2','5','4','5','Quisquam dolor nemo at eaque sunt aut.','Molestiae aut similique et asperiores aut voluptatem.',NULL,'5','7'),
-('128','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2000-07-15 12:42:42','3','6','7','3','5','Itaque voluptatem esse adipisci quo.','Perspiciatis non quae blanditiis aut et placeat ut quaerat.',NULL,'3','5'),
-('129','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1993-01-24 21:36:33','0','8','0','6','8','Alias ea itaque dolor praesentium et sed.','Maxime itaque soluta necessitatibus et.',NULL,'3','7'),
-('130','1991-12-09 01:45:53', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','0','6','4','4','2','Nulla rerum itaque cupiditate facere aliquid.','Quo iste sint voluptatem.',NULL,'6','1'),
-('131','2012-08-09 18:42:24', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1977-09-15 15:07:10','5','3','6','5','4','Facere delectus sit quis architecto.','Veritatis consequatur aut qui ullam perferendis est enim rem.',NULL,'4','0'),
-('132','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1987-01-13 23:13:28','8','4','8','0','6','Voluptatem est porro possimus architecto.','Voluptas quo modi unde possimus similique expedita alias.',NULL,'3','3'),
-('133','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','6','1','5','3','9','Nulla architecto maiores nobis quibusdam.','Ex asperiores nobis quas ad laudantium et in.',NULL,
-('134','1975-07-15 00:25:02', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2004-11-26 16:29:02','9','8','7','3','8','Quis rerum ut labore voluptas.','Expedita possimus aut tenetur assumenda.',NULL,'8','9'),
-('135','1989-06-14 03:19:28', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','1','1','7','2','3','Fugiat dolor voluptas consequuntur hic voluptatem.','Doloribus id repellat vero porro.',NULL,'7','6'),
-('136','1981-09-02 00:30:18', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','1','0','1','3','7','Placeat quidem ab expedita dignissimos.','Inventore nulla deleniti aliquid autem ut quaerat nihil.',NULL,'8','1'),
-('137','1971-01-05 13:01:03', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2018-09-29 02:41:23','4','2','5','6','3','Quas et est atque.','Voluptatum rem sed aspernatur qui beatae.',NULL,'8','8'),
-('138','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','8','8','9','0','4','Ut libero recusandae deleniti reiciendis provident.','Numquam mollitia voluptatem velit et est assumenda dolorum aliquid.',NULL,'4','3'),
-('139','1999-05-03 06:11:17', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2015-06-26 01:15:03','6','6','5','7','0','Unde ipsa eum natus molestiae ipsa nemo dolore.','Iusto veritatis et tempora ut quidem dolor.',NULL,'0','2'),
-('140','2003-06-02 18:36:05', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2019-02-18 02:03:52','3','3','6','9','4','Aut error nam sint velit eius omnis eos.','Sed nihil saepe quasi repellendus sint nobis deleniti.',NULL,'6','3'),
-('141','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'2011-05-23 05:38:01','3','4','6','6','4','Natus mollitia est quia beatae ducimus rerum.','Qui aspernatur quidem rem accusantium.',NULL,'9','9'),
-('142','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','0','4','1','0','0','Quo sit facere minus est voluptas dolor ut eligendi.','Fugiat maiores non illum a maxime.',NULL,'9','6'),
-('143','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1994-08-28 02:27:05','1','4','7','5','7','Nostrum reprehenderit repellat illo qui.','Quasi magnam sit veritatis.',NULL,'3','1'),
-('144','1977-07-06 13:00:10', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1989-05-02 21:32:05','6','9','6','5','7','Odio vero ea ex ut dolorum.','Tenetur tenetur sed sunt quia voluptatem.',NULL,'1','9'),
-('145','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','2','0','8','7','6','Enim rem vitae explicabo.','Quia et et provident porro.',NULL,'8','4'),
-('146','1997-01-19 21:10:19', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1988-06-07 00:06:04','4','5','3','9','2','Saepe odit explicabo eos numquam quis et.','Ad debitis modi assumenda dolorem.',NULL,'4','7'),
-('147','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1996-03-18 11:56:54','9','5','2','9','6','Rerum exercitationem et sunt dolor.','Ut itaque commodi consequatur et ipsum laboriosam ducimus.',NULL,'2','0'),
-('148','0000-00-00 00:00:00', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'1992-01-15 03:54:26','7','0','2','4','4','Enim non aut perferendis.','Non voluptatem occaecati explicabo voluptas.',NULL,'7','3'),
-('149','2011-05-16 06:37:51', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','9','3','1','8','8','Nostrum alias aut voluptatem distinctio expedita molestiae commodi.','Cupiditate illo et est quae.',NULL,'2','8'),
-('150','1995-04-24 16:00:37', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'0000-00-00 00:00:00','1','0','7','2','7','Maiores libero ut consequatur ut sed.','Qui beatae maxime ipsum suscipit quia illo veniam.',NULL,'9','4'); 
-*/
-
 DROP TABLE IF EXISTS forecast_rp5;
 CREATE TABLE forecast_rp5 (
 	id SERIAL PRIMARY KEY,
 	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
-	gtpp VARCHAR(100) COMMENT 'PVIE0001',  -- ============ заменить на VARCHAR(8)	
+	gtpp VARCHAR(8) COMMENT 'PVIE0001',  
 	local_time DATETIME null COMMENT 'местн. время',-- STR_TO_DATE('2019г. 1 ноября 16:00', '%d.%m.%Y %H:%i:%s') -часть после заяпятой  не адаптирована														 
 	cloudy_v FLOAT unsigned  COMMENT 'облака вертикального развития',
 	cloudy_l FLOAT unsigned  COMMENT 'облака нижнего яруса',
@@ -535,7 +528,7 @@ CREATE TABLE links_obj_insol (
 	id SERIAL PRIMARY KEY,
 	id_param FLOAT unsigned  COMMENT 'ID параметра на сайте Grafanya',
 	name VARCHAR(50)  COMMENT 'наименование значения',
-	gtpp VARCHAR(100) COMMENT 'PVIE0001',  -- ============ заменить на VARCHAR(8)
+	gtpp VARCHAR(8) COMMENT 'PVIE0001',
 	-- value DOUBLE COMMENT 'само значение', -- не нужно, так как в табл нет значений, табл справочная
 	name_ses VARCHAR(100) COMMENT 'наименование СЭС', --  =============== надо будет удалить и обращаться к полю через???? или не надо удалять? 
 	index(id_param),
@@ -567,52 +560,11 @@ DELIMITER ;
 -- select @x;
 CALL dowhile_links_obj_insol();
 
-/*INSERT INTO `links_obj_insol` VALUES 
-('235','37965','quam', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('236','1458560','tempora', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('237','99','eum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('238','769462000','ipsa', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('239','348413','omnis', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('240','37559200','vel', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('241','31973300','neque', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('242','11','ipsa', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('243','0','atque', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('244','38','cum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('245','5790080','quia', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('246','93','soluta', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('247','5540880','necessitatibus', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('248','5','dignissimos', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('249','86037','et', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('250','7105320','pariatur', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('251','82122','nam', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('252','83396500','maiores', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('253','318241','voluptatum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('254','799135000','voluptatem', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('255','715','harum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('256','66344','excepturi', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('257','2','necessitatibus', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('258','76','recusandae', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('259','5826010','velit', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('260','53668800','distinctio', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('261','9420240','et', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('262','3','ipsum', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('263','55973','neque', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('264','222','soluta', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('265','33594','officia', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('266','168','ad', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('267','39513200','amet', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('268','602916000','sequi', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('269','368','inventore', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('270','28','molestiae', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('271','64707100','asperiores', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('272','997616','et', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL),
-('273','5676','ab', (select gtpp from gtp where id = (select RAND_INT (1, 13))),NULL); */
-
 DROP TABLE IF EXISTS insol;
 CREATE TABLE insol (
 	id SERIAL PRIMARY KEY,
 	trading_date DATETIME null, -- STR_TO_DATE('2019-10-13 00', '%d.%m.%Y %H:%i:%s') -- 2019-10-13 - дата, 00 - час          
-		gtpp VARCHAR(100) COMMENT 'PVIE0001',  --  =============== надо будет удалить и обращаться к полю через links_obj_insol
+		gtpp VARCHAR(8) COMMENT 'PVIE0001',  --  =============== надо будет удалить и обращаться к полю через links_obj_insol
 	id_param FLOAT unsigned  COMMENT 'ID параметра на сайте Grafanya',
 		name VARCHAR(50)  COMMENT 'наименование значения', --  =============== надо будет удалить и обращаться к полю через links_obj_insol
 	value DOUBLE COMMENT 'само значение',
@@ -623,7 +575,7 @@ CREATE TABLE insol (
     FOREIGN KEY (gtpp) REFERENCES gtp(gtpp),
     FOREIGN KEY (id_param) REFERENCES links_obj_insol(id_param),
     FOREIGN KEY (gtpp) REFERENCES links_obj_insol(gtpp), --  =============== надо будет удалить и обращаться к полю через links_obj_insol
-    FOREIGN KEY (name) REFERENCES links_obj_insol(name_ses) --  =============== Показал для сложности процедуры ниже удалю в будущем
+    FOREIGN KEY (name) REFERENCES links_obj_insol(name_ses) --  =============== Показал для сложности процедуры, которая идет ниже, удалю в будущем
 );
 
 DELIMITER //
@@ -648,61 +600,10 @@ DELIMITER ;
 
 CALL dowhile_insol();
 
-/*INSERT INTO `insol` VALUES 
-('401',NULL,NULL,NULL,NULL,'136050023.18384'),
-('402',NULL,NULL,NULL,NULL,'0.0145186'),
-('403',NULL,NULL,NULL,NULL,'153374.03678'),
-('404',NULL,NULL,NULL,NULL,'309690'),
-('405',NULL,NULL,NULL,NULL,'49275176.23'),
-('406',NULL,NULL,NULL,NULL,'355203060.319'),
-('407',NULL,NULL,NULL,NULL,'91.7982'),
-('408',NULL,NULL,NULL,NULL,'36812930.009'),
-('409',NULL,NULL,NULL,NULL,'2758828.53'),
-('410',NULL,NULL,NULL,NULL,'390645.3279671'),
-('411',NULL,NULL,NULL,NULL,'393950.933217'),
-('412',NULL,NULL,NULL,NULL,'0'),
-('413',NULL,NULL,NULL,NULL,'2891.8540578'),
-('414',NULL,NULL,NULL,NULL,'5307.10257054'),
-('415',NULL,NULL,NULL,NULL,'0'),
-('416',NULL,NULL,NULL,NULL,'744.989'),
-('417',NULL,NULL,NULL,NULL,'599414.98585976'),
-('418',NULL,NULL,NULL,NULL,'0.60628'),
-('419',NULL,NULL,NULL,NULL,'2659.6074'),
-('420',NULL,NULL,NULL,NULL,'0.86294'),
-('421',NULL,NULL,NULL,NULL,'0'),
-('422',NULL,NULL,NULL,NULL,'39371808.8'),
-('423',NULL,NULL,NULL,NULL,'4175681.02'),
-('424',NULL,NULL,NULL,NULL,'377841263.53127'),
-('425',NULL,NULL,NULL,NULL,'17175.979264'),
-('426',NULL,NULL,NULL,NULL,'360159.4459804'),
-('427',NULL,NULL,NULL,NULL,'0'),
-('428',NULL,NULL,NULL,NULL,'58326.115841839'),
-('429',NULL,NULL,NULL,NULL,'3366.6933'),
-('430',NULL,NULL,NULL,NULL,'927986'),
-('431',NULL,NULL,NULL,NULL,'0'),
-('432',NULL,NULL,NULL,NULL,'82240.73'),
-('433',NULL,NULL,NULL,NULL,'0.087'),
-('434',NULL,NULL,NULL,NULL,'17654329.132488'),
-('435',NULL,NULL,NULL,NULL,'20672'),
-('436',NULL,NULL,NULL,NULL,'1870037.3742'),
-('437',NULL,NULL,NULL,NULL,'6611.12275799'),
-('438',NULL,NULL,NULL,NULL,'5.66659'),
-('439',NULL,NULL,NULL,NULL,'4051445.25'),
-('440',NULL,NULL,NULL,NULL,'0'),
-('441',NULL,NULL,NULL,NULL,'1959.721969352'),
-('442',NULL,NULL,NULL,NULL,'4.96958'),
-('443',NULL,NULL,NULL,NULL,'4465.5157'),
-('444',NULL,NULL,NULL,NULL,'3044311.8186713'),
-('445',NULL,NULL,NULL,NULL,'20148.98844'),
-('446',NULL,NULL,NULL,NULL,'6.87574'),
-('447',NULL,NULL,NULL,NULL,'25.328469'),
-('448',NULL,NULL,NULL,NULL,'59216.06'),
-('449',NULL,NULL,NULL,NULL,'408943206.7'),
-('450',NULL,NULL,NULL,NULL,'267254661.628'); */
 
 DROP TABLE IF EXISTS links_meteo_lok;
 CREATE TABLE links_meteo_lok (
-	gtpp VARCHAR(100) COMMENT 'PVIE0001',  -- ============ заменить на VARCHAR(8)
+	gtpp VARCHAR(8) COMMENT 'PVIE0001',
 	link VARCHAR(1000) COMMENT 'ссылка на страницу с прогнозом погоды',
 	link_fact VARCHAR(1000) COMMENT 'ссылка на страницу с ФАКТОМ погоды',
 	name_ses VARCHAR(100) COMMENT 'наименование СЭС', --  =============== надо будет удалить и обращаться к полю через links_obj_insol
@@ -714,70 +615,25 @@ CREATE TABLE links_meteo_lok (
 
 INSERT INTO `links_meteo_lok` VALUES 
 ((select @lok := (select gtpp from gtp where id = 1)),'http://hayes.org/','http://buckridge.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://connelly.com/','http://www.fay.biz/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://vandervort.org/','http://www.wiegandkiehn.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://considine.info/','http://hand.biz/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://whiteswift.com/','http://www.sporer.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://www.pollichlesch.com/','http://www.conroy.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://king.info/','http://www.douglasgrant.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://kerlukeskiles.net/','http://www.lynch.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://skilestoy.com/','http://mante.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://www.moorerogahn.info/','http://turner.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://www.lemke.biz/','http://bechtelarhagenes.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://miller.com/','http://www.mills.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
-((select @lok := (select gtpp from gtp where id = 1)),'http://www.jerdeorn.com/','http://www.windler.com/',(select name_ses from gtp where gtpp = @lok limit 1))
+((select @lok := (select gtpp from gtp where id = 2)),'http://connelly.com/','http://www.fay.biz/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 3)),'http://vandervort.org/','http://www.wiegandkiehn.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 4)),'http://considine.info/','http://hand.biz/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 5)),'http://whiteswift.com/','http://www.sporer.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 6)),'http://www.pollichlesch.com/','http://www.conroy.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 7)),'http://king.info/','http://www.douglasgrant.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 8)),'http://kerlukeskiles.net/','http://www.lynch.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 9)),'http://skilestoy.com/','http://mante.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 10)),'http://www.moorerogahn.info/','http://turner.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 11)),'http://www.lemke.biz/','http://bechtelarhagenes.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 12)),'http://miller.com/','http://www.mills.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 13)),'http://www.jerdeorn.com/','http://www.windler.com/',(select name_ses from gtp where gtpp = @lok limit 1))
 ; 
 
-DROP TABLE IF EXISTS logs;
-CREATE TABLE logs (
-	log_time DATETIME not null COMMENT 'время создания лога',
-	log_txt VARCHAR(1000) not null COMMENT 'текст лога',
-	status VARCHAR(50) not null COMMENT 'статус лога - ошибка, примечание и пр.'
-	-- индексы нужны ли индексы? размер лога может быть очень большим, но пользоваться им будут крайне редко (только при наличии ошибок)
-	-- index(log_time),
-	-- index(status)
-) ENGINE=ARCHIVE;
-
-DROP trigger IF EXISTS insert_report_27;
-DROP trigger IF EXISTS insert_report_28;
-DROP trigger IF EXISTS insert_br;
-DELIMITER //
-create trigger insert_report_27 after insert on report_27
-for each row
-begin
-	insert into logs (time_add, table_name, key_id, name_from_table) values 
-	(now(), 'products', (select id from products order by id desc limit 1), (select name from products order by id desc limit 1));
-end //
-
-create trigger insert_report_28 after insert on report_28
-for each row
-begin
-	insert into logs (time_add, table_name, key_id, name_from_table) values 
-	(now(), 'users', (select id from users order by id desc limit 1), (select name from users order by id desc limit 1));
-end //
-
-create trigger insert_br after insert on insert_br
-for each row
-begin
-	insert into logs (time_add, table_name, key_id, name_from_table) values 
-	(now(), 'catalogs', (select id from catalogs order by id desc limit 1), (select name from catalogs order by id desc limit 1));
-end //
-DELIMITER ;
-
-SHOW TRIGGERS;
-
-/*INSERT INTO `logs` VALUES ('1','Ea nihil consequuntur sint fugit.','Perspiciatis et rerum qui rerum dolores iste repel'),
-('2','Eum expedita cupiditate voluptatem corrupti repudiandae voluptatibus.','Numquam temporibus quis possimus dolores aliquam a'),
-('3','Laborum sunt et architecto quasi.','Quisquam placeat quidem ullam quia facilis quia. C'),
-('4','Velit placeat culpa dicta et distinctio.','Voluptates sed dolore accusamus dolorem placeat. M'),
-('5','Similique magnam id et.','Iure quae non minima rem autem veniam quasi aut. B'),
-('6','Corrupti hic quo provident et consequuntur quod animi.','Itaque maiores accusantium temporibus omnis sit. Q'),
-('7','Voluptatibus quod illum eum nemo laboriosam eum.','Et dolor quo amet eligendi voluptatem impedit. Sed'),
-('8','Optio ut nemo perferendis repellat.','Unde impedit nobis deleniti doloribus voluptatem f'),
-('9','Ea temporibus aperiam et adipisci voluptatibus recusandae et.','Voluptas ullam quidem aperiam. Aut saepe quam veni'),
-('10','Illum consequuntur aliquid nihil numquam quis.','In consequatur earum error architecto sit. Aut iur'); */
 
 
+-- SHOW TRIGGERS;
+-- SHOW PROCEDURE STATUS WHERE  Db = 'sql_project2';
+-- SHOW FUNCTION STATUS WHERE  Db = 'sql_project2';
 
 
 /* -- Загрузка информации из CSV - реализовать позднее
