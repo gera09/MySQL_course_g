@@ -3,7 +3,12 @@
  * Она в себе содержит данные из отчетов инфраструктурных организаций (ценовые и объемные показатели)
  * А также фактические и прогнозные данные из различных метеоисточников, с приборов, принадлежащих 
  * непосредственно самой Организации
- * БД будет обновляться ежедневно, по мере поступления новой информации
+ * БД будет обновляться ежедневно, по мере поступления новой информации.
+ * Для примера заполнения я взял по 50 строк. В некоторых таблицах меньше, потому что
+ * это вся существующая информация, которая может в них содержаться.
+ * 
+ * В БД нет полей not null - это потому что периодически совершенно в любых колонках могут возникать 
+ * значения null.
  */
 
 /* table's name:
@@ -16,7 +21,7 @@
  * links_obj_insol - список объектов по инсоляции и пр данным
  * links_meteo_lok - список локаций метеообъектов (добавить расположение СЭС и дистанцию с метеостанцией)
  * gtp - список ГТП
- * logs - логи
+ * logs - логи (тип движка ARCHIVE) - логирование вставки в таблицы report_27, report_28, br
  * 
  * На будущее сделать таблицы:
  * ku
@@ -618,7 +623,7 @@ CREATE TABLE insol (
     FOREIGN KEY (gtpp) REFERENCES gtp(gtpp),
     FOREIGN KEY (id_param) REFERENCES links_obj_insol(id_param),
     FOREIGN KEY (gtpp) REFERENCES links_obj_insol(gtpp), --  =============== надо будет удалить и обращаться к полю через links_obj_insol
-    FOREIGN KEY (name) REFERENCES links_obj_insol(name) --  =============== надо будет удалить и обращаться к полю через links_obj_insol
+    FOREIGN KEY (name) REFERENCES links_obj_insol(name_ses) --  =============== Показал для сложности процедуры ниже удалю в будущем
 );
 
 DELIMITER //
@@ -632,39 +637,18 @@ begin
 @million, -- id
 (select trading_date from br where id = (select RAND_INT (201, 250))), -- случайная даа из табл br - local_time
 (select @x_gtp := (select gtpp from gtp where id = (select RAND_INT (1, 13)))), -- gtpp
-
-
-
-
-
-
-
-
-
-
-
-(select id_param from links_obj_insol where gtpp = @x_gtp limit 1), -- id_param СДЕЛАТЬ СЛУЧАЙНУЮ ВЫБОРКУ ИЗ id_param!!!
-
-
-
-
-
-
-
-
-(select name_ses from gtp where gtpp = @x limit 1), -- name
+(select @x_id := (select id_param from links_obj_insol where gtpp = @x_gtp ORDER BY RAND() limit 1)), -- id_param из выборки берется по случайному id
+(select name_ses from links_obj_insol where gtpp = @x_gtp limit 1), -- name - сторого соответсвует id_param и gtpp
 (select RAND_INT (1, 1000)) -- value
 );
-
 	 SET @million = @million + 1;
 	END WHILE;
 end //
 DELIMITER ;
 
--- select @x;
 CALL dowhile_insol();
 
-INSERT INTO `insol` VALUES 
+/*INSERT INTO `insol` VALUES 
 ('401',NULL,NULL,NULL,NULL,'136050023.18384'),
 ('402',NULL,NULL,NULL,NULL,'0.0145186'),
 ('403',NULL,NULL,NULL,NULL,'153374.03678'),
@@ -714,7 +698,7 @@ INSERT INTO `insol` VALUES
 ('447',NULL,NULL,NULL,NULL,'25.328469'),
 ('448',NULL,NULL,NULL,NULL,'59216.06'),
 ('449',NULL,NULL,NULL,NULL,'408943206.7'),
-('450',NULL,NULL,NULL,NULL,'267254661.628'); 
+('450',NULL,NULL,NULL,NULL,'267254661.628'); */
 
 DROP TABLE IF EXISTS links_meteo_lok;
 CREATE TABLE links_meteo_lok (
@@ -725,37 +709,64 @@ CREATE TABLE links_meteo_lok (
 	index(gtpp),
 	index(name_ses),
     FOREIGN KEY (gtpp) REFERENCES gtp(gtpp),
-    FOREIGN KEY (name_ses) REFERENCES gtp(name_ses)  --  =============== надо будет удалить и обращаться к полю через links_obj_insol
+    FOREIGN KEY (name_ses) REFERENCES gtp(name_ses) -- эту колонку не надо удалять, так как таблица будет менее 100 строк, для удобства оставить!
 );
 
 INSERT INTO `links_meteo_lok` VALUES 
-((select gtpp from gtp where id = 1)),'http://hayes.org/','http://buckridge.com/',NULL),
-(NULL,'http://connelly.com/','http://www.fay.biz/',NULL),
-(NULL,'http://vandervort.org/','http://www.wiegandkiehn.com/',NULL),
-(NULL,'http://considine.info/','http://hand.biz/',NULL),
-(NULL,'http://whiteswift.com/','http://www.sporer.net/',NULL),
-(NULL,'http://www.pollichlesch.com/','http://www.conroy.com/',NULL),
-(NULL,'http://king.info/','http://www.douglasgrant.net/',NULL),
-(NULL,'http://kerlukeskiles.net/','http://www.lynch.com/',NULL),
-(NULL,'http://skilestoy.com/','http://mante.com/',NULL),
-(NULL,'http://www.moorerogahn.info/','http://turner.com/',NULL),
-(NULL,'http://www.lemke.biz/','http://bechtelarhagenes.com/',NULL),
-(NULL,'http://miller.com/','http://www.mills.net/',NULL),
-(NULL,'http://www.jerdeorn.com/','http://www.windler.com/',NULL); 
+((select @lok := (select gtpp from gtp where id = 1)),'http://hayes.org/','http://buckridge.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://connelly.com/','http://www.fay.biz/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://vandervort.org/','http://www.wiegandkiehn.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://considine.info/','http://hand.biz/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://whiteswift.com/','http://www.sporer.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://www.pollichlesch.com/','http://www.conroy.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://king.info/','http://www.douglasgrant.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://kerlukeskiles.net/','http://www.lynch.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://skilestoy.com/','http://mante.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://www.moorerogahn.info/','http://turner.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://www.lemke.biz/','http://bechtelarhagenes.com/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://miller.com/','http://www.mills.net/',(select name_ses from gtp where gtpp = @lok limit 1)),
+((select @lok := (select gtpp from gtp where id = 1)),'http://www.jerdeorn.com/','http://www.windler.com/',(select name_ses from gtp where gtpp = @lok limit 1))
+; 
 
 DROP TABLE IF EXISTS logs;
 CREATE TABLE logs (
-	-- log_time DATETIME null COMMENT 'время создания лога', -- ============================= ВОССТАНОВИТЬ ВРЕМЯ ===================
-	id SERIAL PRIMARY KEY,
-	log_txt VARCHAR(1000) COMMENT 'текст лога',
-	status VARCHAR(50) COMMENT 'статус лога - ошибка, примечание и пр.'
-	-- индексы
-	-- index(log_time), -- эти индексы не нужны, так как поиск будет выполняться редко - только при наличии ошибок
+	log_time DATETIME not null COMMENT 'время создания лога',
+	log_txt VARCHAR(1000) not null COMMENT 'текст лога',
+	status VARCHAR(50) not null COMMENT 'статус лога - ошибка, примечание и пр.'
+	-- индексы нужны ли индексы? размер лога может быть очень большим, но пользоваться им будут крайне редко (только при наличии ошибок)
+	-- index(log_time),
 	-- index(status)
-    -- прописать ключи
-);
+) ENGINE=ARCHIVE;
 
-INSERT INTO `logs` VALUES ('1','Ea nihil consequuntur sint fugit.','Perspiciatis et rerum qui rerum dolores iste repel'),
+DROP trigger IF EXISTS insert_report_27;
+DROP trigger IF EXISTS insert_report_28;
+DROP trigger IF EXISTS insert_br;
+DELIMITER //
+create trigger insert_report_27 after insert on report_27
+for each row
+begin
+	insert into logs (time_add, table_name, key_id, name_from_table) values 
+	(now(), 'products', (select id from products order by id desc limit 1), (select name from products order by id desc limit 1));
+end //
+
+create trigger insert_report_28 after insert on report_28
+for each row
+begin
+	insert into logs (time_add, table_name, key_id, name_from_table) values 
+	(now(), 'users', (select id from users order by id desc limit 1), (select name from users order by id desc limit 1));
+end //
+
+create trigger insert_br after insert on insert_br
+for each row
+begin
+	insert into logs (time_add, table_name, key_id, name_from_table) values 
+	(now(), 'catalogs', (select id from catalogs order by id desc limit 1), (select name from catalogs order by id desc limit 1));
+end //
+DELIMITER ;
+
+SHOW TRIGGERS;
+
+/*INSERT INTO `logs` VALUES ('1','Ea nihil consequuntur sint fugit.','Perspiciatis et rerum qui rerum dolores iste repel'),
 ('2','Eum expedita cupiditate voluptatem corrupti repudiandae voluptatibus.','Numquam temporibus quis possimus dolores aliquam a'),
 ('3','Laborum sunt et architecto quasi.','Quisquam placeat quidem ullam quia facilis quia. C'),
 ('4','Velit placeat culpa dicta et distinctio.','Voluptates sed dolore accusamus dolorem placeat. M'),
@@ -764,12 +775,12 @@ INSERT INTO `logs` VALUES ('1','Ea nihil consequuntur sint fugit.','Perspiciatis
 ('7','Voluptatibus quod illum eum nemo laboriosam eum.','Et dolor quo amet eligendi voluptatem impedit. Sed'),
 ('8','Optio ut nemo perferendis repellat.','Unde impedit nobis deleniti doloribus voluptatem f'),
 ('9','Ea temporibus aperiam et adipisci voluptatibus recusandae et.','Voluptas ullam quidem aperiam. Aut saepe quam veni'),
-('10','Illum consequuntur aliquid nihil numquam quis.','In consequatur earum error architecto sit. Aut iur'); 
+('10','Illum consequuntur aliquid nihil numquam quis.','In consequatur earum error architecto sit. Aut iur'); */
 
 
 
 
-/*
+/* -- Загрузка информации из CSV - реализовать позднее
 SHOW VARIABLES LIKE "secure_file_priv"; -- установил в файле my.ini пустое значение!
 
 SHOW VARIABLES
@@ -793,9 +804,6 @@ LINES TERMINATED BY '\n' -- '\n'
 IGNORE 1 ROWS;
 
   
-
-
-	/*========================================================== stoped here!!! */
 /* table's name:
  * report_27 - отчет 27
  * report_28 - отчет 28
@@ -813,7 +821,7 @@ IGNORE 1 ROWS;
  * fin_rez
  * peni_mounth
  * peni_kontrag
- * В ТАБЛИЦЕ НУЖЕН ОТДЕЛЬНЫЙ СПИСОК ГТПП!!! ИЛИ РЕШИТЬКАК ПОЛУЧАТЬ УНИКАЛЬНЫЕ ГТПП!!!!========================================================
+ * В ТАБЛИЦЕ НУЖЕН ОТДЕЛЬНЫЙ СПИСОК ГТПП!!! ИЛИ РЕШИТЬ КАК ПОЛУЧАТЬ УНИКАЛЬНЫЕ ГТПП!!!!========================================================
  * */
 
 -- SELECT FLOOR(1 + (RAND() * 13));
