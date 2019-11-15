@@ -15,8 +15,8 @@
  * Надо решить, обновлять данные, если за один и тот же торговый час будет вставляться информация, или просто пропускать вставку, 
  * если значение date_time не уникально.
  * 
- * В БД нет полей not null - это потому что периодически совершенно в любых колонках могут возникать 
- * значения null.
+ * В БД нет полей unsigned - это потому что периодически совершенно в любых колонках могут возникать 
+ * отрицательные значения.
  */
 
 /* Состав КП:
@@ -249,57 +249,74 @@ begin
 end //
 DELIMITER ;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- ================================================================
 INSERT INTO `report_28` VALUES 
-('401','2005-03-26 07:09:21', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'925','0','0','4','6','7','4','2'),
-('402','2006-08-23 02:40:03', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'128','274.808','4','9','4','8','4','7'),
-('403','1988-07-30 21:36:36', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'923','2006.57','7','7','2','3','6','0'),
-('404','2017-11-02 17:11:21', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'888','7287.61','6','7','5','6','9','9'),
-('405','1987-10-29 16:11:40', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'136','445201000','7','5','1','1','7','7'),
-('406','1999-01-29 18:12:06', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'457','185870','5','5','3','8','8','6'),
-('407','2012-03-28 01:06:31', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'470','0','3','9','7','7','9','3'),
-('408','1989-07-10 03:04:23', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'124','496237000','9','9','8','6','1','4'),
-('409','2008-10-21 21:14:05', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'633','36751800','0','0','0','7','8','7'),
-('410','1994-12-06 05:22:38', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'40','43.8266','1','4','9','9','9','6'),
-('411','1973-04-06 01:01:26', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'873','0','9','9','4','1','1','4'),
-('412','1972-04-04 12:03:54', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'621','4715','6','9','2','9','7','3'),
-('413','2008-07-08 09:36:42', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'725','1.79391','4','5','3','6','6','5'),
-('414','2008-05-18 14:43:13', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'800','6390760','2','4','4','2','5','6'),
-('415','1984-07-11 08:58:29', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'972','0','9','1','6','1','5','6'),
-('416','1990-08-31 04:02:15', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'691','0','6','2','8','2','7','7'),
-('417','2003-09-29 00:44:24', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'186','2137.88','9','5','1','9','3','3'),
-('418','2011-12-08 01:06:28', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'662','4713960','2','6','3','0','4','4'),
-('419','1987-07-05 13:06:48', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'728','4.28175','2','9','8','2','4','8'),
-('420','1972-10-10 19:32:33', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'655','175843000','4','0','4','4','7','1'),
-('421','2003-01-21 09:30:24', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'37','5127720','0','0','3','5','2','5'),
-('422','2010-04-30 15:53:13', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'34','29602600','8','4','0','4','2','3'),
-('423','1993-12-15 10:26:25', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'869','194.609','6','2','6','8','8','7'),
-('424','1983-06-03 11:18:55', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'354','45','8','3','8','3','4','1'),
-('425','2011-05-13 03:19:25', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'976','111396','3','8','3','2','3','7'),
-('426','1989-01-01 02:38:23', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'540','0','2','2','0','1','7','5'),
-('427','1999-06-15 02:20:03', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'454','57031100','9','1','0','7','6','0'),
-('428','1972-04-11 05:27:41', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'892','230.349','2','3','9','7','4','8'),
-('429','2019-02-06 06:13:54', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'102','1841350','6','1','7','0','7','7'),
-('430','2001-07-19 01:11:46', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'924','0','8','9','2','7','1','8'),
-('431','1981-12-09 19:00:43', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'239','0','7','9','5','2','3','9'),
-('432','1977-04-11 07:20:35', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'504','14865.1','7','2','1','0','3','8'),
-('433','2018-03-30 08:16:30', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'757','2.57322','6','0','2','6','7','5'),
-('434','1972-10-30 03:03:11', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'751','17384','3','5','2','6','5','0'),
-('435','1977-12-17 00:33:49', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'297','228023','4','3','8','6','5','6'),
-('436','2008-03-17 22:01:01', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'961','75','2','2','5','8','2','5'),
-('437','1974-07-02 17:57:02', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'782','31490.3','2','3','3','3','6','0'),
-('438','2012-09-06 09:16:30', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'345','236.1','6','6','5','6','2','5'),
-('439','1980-04-07 00:41:54', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'355','582.524','2','4','9','2','1','1'),
-('440','1981-05-30 13:27:39', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'508','0','0','3','6','2','3','7'),
-('441','2019-07-17 01:33:49', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'814','76379700','3','1','7','2','7','3'),
-('442','1979-11-18 12:20:03', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'253','0','5','5','7','2','9','8'),
-('443','2007-10-30 15:01:46', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'956','328.88','8','1','8','6','5','2'),
-('444','1987-01-07 18:49:29', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'69','1675170','5','3','1','2','9','9'),
-('445','1989-10-11 08:45:33', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'669','396234','5','9','3','4','5','1'),
-('446','1992-12-27 14:30:32', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'443','0.164375','8','2','3','0','0','1'),
-('447','2016-10-25 08:07:47', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'638','7030880','2','4','5','3','5','8'),
-('448','1975-10-10 20:34:54', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'465','1010010','1','4','7','3','8','7'),
-('449','1973-09-16 22:03:50', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'287','1769.16','0','5','6','0','9','3'),
-('450','1982-10-28 10:43:10', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'468','1595340','4','4','0','7','0','0'); 
+((select id from report_27 where id = (select @id_27 := (select id from report_27 order by id limit 1))),'2005-03-26 07:09:21', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'925','0','0','4','6','7','4','2'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1))),'2006-08-23 02:40:03', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'128','274.808','4','9','4','8','4','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1988-07-30 21:36:36', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'923','2006.57','7','7','2','3','6','0'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2017-11-02 17:11:21', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'888','7287.61','6','7','5','6','9','9'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1987-10-29 16:11:40', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'136','445201000','7','5','1','1','7','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1999-01-29 18:12:06', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'457','185870','5','5','3','8','8','6'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2012-03-28 01:06:31', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'470','0','3','9','7','7','9','3'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1989-07-10 03:04:23', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'124','496237000','9','9','8','6','1','4'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2008-10-21 21:14:05', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'633','36751800','0','0','0','7','8','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1994-12-06 05:22:38', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'40','43.8266','1','4','9','9','9','6'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1973-04-06 01:01:26', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'873','0','9','9','4','1','1','4'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1972-04-04 12:03:54', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'621','4715','6','9','2','9','7','3'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2008-07-08 09:36:42', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'725','1.79391','4','5','3','6','6','5'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2008-05-18 14:43:13', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'800','6390760','2','4','4','2','5','6'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1984-07-11 08:58:29', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'972','0','9','1','6','1','5','6'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1990-08-31 04:02:15', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'691','0','6','2','8','2','7','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2003-09-29 00:44:24', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'186','2137.88','9','5','1','9','3','3'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2011-12-08 01:06:28', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'662','4713960','2','6','3','0','4','4'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1987-07-05 13:06:48', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'728','4.28175','2','9','8','2','4','8'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1972-10-10 19:32:33', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'655','175843000','4','0','4','4','7','1'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2003-01-21 09:30:24', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'37','5127720','0','0','3','5','2','5'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2010-04-30 15:53:13', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'34','29602600','8','4','0','4','2','3'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1993-12-15 10:26:25', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'869','194.609','6','2','6','8','8','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1983-06-03 11:18:55', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'354','45','8','3','8','3','4','1'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2011-05-13 03:19:25', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'976','111396','3','8','3','2','3','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1989-01-01 02:38:23', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'540','0','2','2','0','1','7','5'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1999-06-15 02:20:03', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'454','57031100','9','1','0','7','6','0'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1972-04-11 05:27:41', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'892','230.349','2','3','9','7','4','8'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2019-02-06 06:13:54', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'102','1841350','6','1','7','0','7','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2001-07-19 01:11:46', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'924','0','8','9','2','7','1','8'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1981-12-09 19:00:43', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'239','0','7','9','5','2','3','9'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1977-04-11 07:20:35', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'504','14865.1','7','2','1','0','3','8'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2018-03-30 08:16:30', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'757','2.57322','6','0','2','6','7','5'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1972-10-30 03:03:11', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'751','17384','3','5','2','6','5','0'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1977-12-17 00:33:49', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'297','228023','4','3','8','6','5','6'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2008-03-17 22:01:01', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'961','75','2','2','5','8','2','5'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1974-07-02 17:57:02', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'782','31490.3','2','3','3','3','6','0'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2012-09-06 09:16:30', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'345','236.1','6','6','5','6','2','5'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1980-04-07 00:41:54', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'355','582.524','2','4','9','2','1','1'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1981-05-30 13:27:39', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'508','0','0','3','6','2','3','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2019-07-17 01:33:49', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'814','76379700','3','1','7','2','7','3'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1979-11-18 12:20:03', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'253','0','5','5','7','2','9','8'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2007-10-30 15:01:46', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'956','328.88','8','1','8','6','5','2'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1987-01-07 18:49:29', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'69','1675170','5','3','1','2','9','9'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1989-10-11 08:45:33', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'669','396234','5','9','3','4','5','1'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1992-12-27 14:30:32', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'443','0.164375','8','2','3','0','0','1'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'2016-10-25 08:07:47', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'638','7030880','2','4','5','3','5','8'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1975-10-10 20:34:54', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'465','1010010','1','4','7','3','8','7'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1973-09-16 22:03:50', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'287','1769.16','0','5','6','0','9','3'),
+((select id from report_27 where id = (select @id_27 := (select @id_27 + 1)),'1982-10-28 10:43:10', (select gtpp from gtp where id = (select RAND_INT (1, 13))),'468','1595340','4','4','0','7','0','0'); 
 
 DROP TABLE IF EXISTS br;
 CREATE TABLE br (
@@ -629,7 +646,34 @@ INSERT INTO `links_meteo_lok` VALUES
 ((select @lok := (select gtpp from gtp where id = 13)),'http://www.jerdeorn.com/','http://www.windler.com/',(select name_ses from gtp where gtpp = @lok limit 1))
 ; 
 
+-- получить отсортированую таблицу links_obj_insol по name_ses (нет смысла в практическом применении, просто хочу посмотреть, 
+-- что нагенерилось в случайных данных)
+select count(*), gtpp from links_obj_insol group by gtpp; 
 
+-- report_27 - запрос на получение стоимости за период (период можно будет вынести из запроса для вариативности)
+DROP VIEW IF EXISTS every_day_otchet;
+create view every_day_otchet as 
+select trading_date as Торговый_час, gtp as ГТП, v_bid_so as Объем_продажи, v_sell_rsv as Цена_РСВ, v_bid_so*v_sell_rsv as Стоимость
+from report_27
+where trading_date > '2002-09-12 06:00:00' and trading_date < '2009-01-01' order by trading_date;
+;
+select * from every_day_otchet;
+
+-- запрос на получение объемов покупки и продажи из 27-28 отчетов
+SELECT  o_27.gtp as ГТП, 
+		o_27.trade_graph as ТГ_27, 
+		o_27.v_bid_so as Ц_прод, 
+	    o_27.trade_graph*o_27.v_bid_so AS Ст_прод,
+	    o_28.gtpp as ГТПП, 
+	    o_28.trade_graph as ТГ_28, 
+	    o_28.v_buy_rsv as Ц_пок, 
+	    o_28.trade_graph*o_28.v_buy_rsv AS Ст_пок
+	FROM report_27 o_27
+JOIN report_28 o_28
+	ON o_27.id = o_28.id
+	WHERE o_27.trading_date > '2002-09-12 06:00:00' and o_27.trading_date < '2009-01-01' order by o_27.trading_date;
+	-- GROUP BY o.user_id 
+	-- ORDER BY total_orders;
 
 -- SHOW TRIGGERS;
 -- SHOW PROCEDURE STATUS WHERE  Db = 'sql_project2';
