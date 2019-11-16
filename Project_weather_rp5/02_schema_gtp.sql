@@ -29,13 +29,13 @@
  * 3 тригера
  * 3 процедуры
  * 2 функции
- * 1 представление
+ * 2 представления
  * Скрипты наполнения таблиц
  * вложенные запросы
  * 
  * Надо:
- * 1 представление
- * запросы с JOIN
+ * сложный запрос с JOIN (найти в примере базы vk)
+ * провести оптимизацию пары медленных запросов
  * 
  * 
  * Имена таблиц:
@@ -663,7 +663,7 @@ INSERT INTO `links_meteo_lok` VALUES
 ((select @lok := (select gtpp from gtp where id = 13)),'http://www.jerdeorn.com/','http://www.windler.com/',(select name_ses from gtp where gtpp = @lok limit 1))
 ; 
 
--- получить отсортированую таблицу links_obj_insol по name_ses (нет смысла в практическом применении, просто хочу посмотреть, 
+-- получить отсортированую таблицу links_obj_insol по name_ses и их количество вхождений (нет смысла в практическом применении, просто хочу посмотреть, 
 -- что нагенерилось в случайных данных)
 select count(*), gtpp from links_obj_insol group by gtpp; 
 
@@ -674,28 +674,51 @@ select trading_date as Торговый_час, gtp as ГТП, v_bid_so as Об�
 from report_27
 where trading_date > '2002-09-12 06:00:00' and trading_date < '2009-01-01' order by trading_date;
 ;
-select * from every_day_otchet;
+
+select * from every_day_otchet; 
 
 -- запрос на получение объемов покупки и продажи из 27-28 отчетов
-SELECT  o_27.gtp as ГТП, 
+SELECT  o_27.trading_date as trading_date,
+		o_27.gtp as ГТП, 
 		o_27.trade_graph as ТГ_27, 
 		o_27.v_bid_so as Ц_прод, 
-	    o_27.trade_graph*o_27.v_bid_so AS Ст_прод,
+	    o_27.trade_graph*o_27.v_bid_so AS Ст_прод, -- стоимость продажи
 	    o_28.gtpp as ГТПП, 
 	    o_28.trade_graph as ТГ_28, 
 	    o_28.v_buy_rsv as Ц_пок, 
-	    o_28.trade_graph*o_28.v_buy_rsv AS Ст_пок
+	    o_28.trade_graph*o_28.v_buy_rsv AS Ст_пок, -- стоимость покупки
+	    round((o_27.trade_graph*o_27.v_bid_so)-(o_28.trade_graph*o_28.v_buy_rsv)) as Баланс -- итоговый баланс
 	FROM report_27 o_27
 JOIN report_28 o_28
 	ON o_27.id = o_28.id
 	WHERE o_27.trading_date > '2002-09-12 06:00:00' and o_27.trading_date < '2009-01-01' order by o_27.trading_date;
 	-- GROUP BY o.user_id 
 	-- ORDER BY total_orders;
+	
 
--- SHOW TRIGGERS;
--- SHOW PROCEDURE STATUS WHERE  Db = 'sql_project2';
--- SHOW FUNCTION STATUS WHERE  Db = 'sql_project2';
--- SHOW FULL TABLES IN sql_project2  WHERE TABLE_TYPE LIKE 'VIEW';
+-- выявить где исоляцияв случайных данных (деленая на 100 и округленная) совпала с генерацией (в реальности объединение надо делать
+-- не по id, а по gtp и дате)
+DROP VIEW IF EXISTS correct_insol;
+create view correct_insol as
+select 	o_27.id,
+		-- o_27.trading_date tr_date_27, -- даты не приведены, данные случайны, то же относится к гтп
+		-- ins.trading_date tr_date_ins,
+		-- o_27.gtp,
+		-- ins.gtpp,
+		o_27.trade_graph,
+		ins.value,
+		round(ins.value/100) `round`
+from report_27 o_27
+join insol ins
+ on (o_27.id = ins.id and o_27.trade_graph = round(ins.value/100));
+
+select * from correct_insol; 
+
+
+SHOW TRIGGERS;
+SHOW PROCEDURE STATUS WHERE  Db = 'sql_project2';
+SHOW FUNCTION STATUS WHERE  Db = 'sql_project2';
+SHOW FULL TABLES IN sql_project2  WHERE TABLE_TYPE LIKE 'VIEW';
 
 
 /* -- Загрузка информации из CSV - реализовать позднее
