@@ -846,7 +846,7 @@ LINES TERMINATED BY '\n' -- '\n'
 IGNORE 1 ROWS;
 */
 
-/*
+
 LOAD DATA INFILE 'csv_to_logs.csv' 
 INTO TABLE logs
 CHARACTER SET cp1251
@@ -855,7 +855,7 @@ ENCLOSED BY '"'
 LINES TERMINATED BY '\n' -- '\n'
 IGNORE 1 ROWS;
 
-  
+/*  
 /* table's name:
  * report_27 - отчет 27
  * report_28 - отчет 28
@@ -877,3 +877,4 @@ IGNORE 1 ROWS;
  * */
 
 -- SELECT FLOOR(1 + (RAND() * 13));
+SHOW VARIABLES LIKE "secure_file_priv";
